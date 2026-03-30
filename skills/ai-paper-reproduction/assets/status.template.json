@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "{{generated_at}}",
+  "user_language": "{{user_language}}",
+  "target_repo": "{{target_repo}}",
+  "readme_first": true,
+  "selected_goal": "{{selected_goal}}",
+  "goal_priority": "{{goal_priority}}",
+  "status": "{{status}}",
+  "documented_command_status": "{{documented_command_status}}",
+  "patches_applied": false,
+  "outputs": {
+    "summary": "repro_outputs/SUMMARY.md",
+    "commands": "repro_outputs/COMMANDS.md",
+    "log": "repro_outputs/LOG.md",
+    "status": "repro_outputs/status.json",
+    "patches": null
+  },
+  "notes": []
+}
