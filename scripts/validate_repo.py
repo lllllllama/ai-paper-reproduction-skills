@@ -113,7 +113,13 @@ def validate_repo(root: Path) -> Tuple[List[str], List[str]]:
         if not (root / rel).exists():
             errors.append(f"Missing repository file: {rel}")
 
-    for rel in ["scripts/test_trigger_boundaries.py", "tests/trigger_cases.json", "references/trigger-boundary-policy.md"]:
+    for rel in [
+        "scripts/test_trigger_boundaries.py",
+        "scripts/test_readme_selection.py",
+        "tests/trigger_cases.json",
+        "tests/readme_selection_cases.json",
+        "references/trigger-boundary-policy.md",
+    ]:
         if not (root / rel).exists():
             errors.append(f"Missing repository file: {rel}")
 

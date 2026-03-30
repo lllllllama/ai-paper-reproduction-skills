@@ -22,5 +22,8 @@ jobs:
       - name: Test trigger boundaries
         run: python scripts/test_trigger_boundaries.py
 
+      - name: Test README selection
+        run: python scripts/test_readme_selection.py
+
       - name: Test installer
         run: python scripts/install_skills.py --target ./tmp/skills --force

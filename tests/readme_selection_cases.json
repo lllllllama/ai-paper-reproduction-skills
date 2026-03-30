@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "cases": [
+    {
+      "id": "installation_vs_usage",
+      "readme": "# Project\n\n## Installation\n```bash\npip install -e .\nconda env create -f environment.yml\n```\n\n## Usage\n```bash\npython scripts/txt2img.py --prompt \"a cat\"\n```\n",
+      "expected_command": "python scripts/txt2img.py --prompt \"a cat\""
+    },
+    {
+      "id": "checkpoint_vs_inference",
+      "readme": "# Project\n\n## Checkpoints\n```bash\nmkdir -p models/foo\nwget https://example.com/model.ckpt\n```\n\n## Inference\n```bash\npython scripts/amg.py --checkpoint model.ckpt --model-type vit_b --input input.jpg --output out\n```\n",
+      "expected_command": "python scripts/amg.py --checkpoint model.ckpt --model-type vit_b --input input.jpg --output out"
+    },
+    {
+      "id": "whisper_usage",
+      "readme": "# Whisper\n\n## Setup\n```bash\npip install setuptools-rust\n```\n\n## Usage\n```bash\nwhisper audio.wav --model turbo\nwhisper --help\n```\n",
+      "expected_command": "whisper audio.wav --model turbo"
+    }
+  ]
+}

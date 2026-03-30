@@ -10,6 +10,7 @@ This repository is a Codex multi-skill collection. Keep changes small, readable,
 ```bash
 python scripts/validate_repo.py
 python scripts/test_trigger_boundaries.py
+python scripts/test_readme_selection.py
 ```
 
 3. If you changed installation behavior, also test:
@@ -40,6 +41,7 @@ python scripts/install_skills.py --target ./tmp/skills --force
 
 - `python scripts/validate_repo.py` passes
 - `python scripts/test_trigger_boundaries.py` passes
+- `python scripts/test_readme_selection.py` passes
 - installer still works
 - changed skill metadata still matches its folder and purpose
 - output spec changes are intentional and documented
