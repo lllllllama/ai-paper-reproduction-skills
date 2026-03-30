@@ -1,6 +1,6 @@
 ---
 name: paper-context-resolver
-description: Optional sub-skill for README-first AI repo reproduction. Use only when README and repository files leave a reproduction-critical gap and the task is to resolve a narrow paper detail such as dataset split, preprocessing, evaluation protocol, checkpoint mapping, or runtime assumption from primary paper sources while recording conflicts. Do not use for general paper summary, repo scanning, environment setup, command execution, or replacing README guidance by default.
+description: Optional sub-skill for README-first AI repo reproduction. Use only when README and repository files leave a narrow reproduction-critical gap and the task is to resolve a specific paper detail such as dataset split, preprocessing, evaluation protocol, checkpoint mapping, or runtime assumption from primary paper sources while recording conflicts. Do not use for general paper summary, repo scanning, environment setup, command execution, title-only paper lookup, or replacing README guidance by default.
 ---
 
 # paper-context-resolver
@@ -10,12 +10,14 @@ description: Optional sub-skill for README-first AI repo reproduction. Use only 
 - README and repo files leave a reproduction-critical gap.
 - The gap concerns dataset version, split, preprocessing, evaluation protocol, checkpoint mapping, or runtime assumptions.
 - The main skill needs a narrow evidence supplement instead of a full paper summary.
+- There is already a concrete reproduction question to answer.
 
 ## When not to apply
 
 - The README already gives enough reproduction detail.
 - The user wants a general paper explanation rather than reproduction support.
 - The goal is to override README instructions without documenting the conflict.
+- The only available input is a paper title and there is no concrete reproduction gap yet.
 
 ## Clear boundaries
 

@@ -10,6 +10,7 @@ Keep reports short, factual, and easy to audit.
 - mention the documented command explicitly
 - mention whether the run was full, partial, smoke-only, or blocked
 - explain the main blocker without burying it
+- when patches were applied, mention patch state briefly in `SUMMARY.md` and keep the full audit in `PATCHES.md`
 
 ## Output priorities
 

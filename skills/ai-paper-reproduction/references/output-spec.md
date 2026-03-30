@@ -20,6 +20,11 @@ Requirements:
 - state overall outcome clearly
 - list the main documented command that was attempted or verified
 - list the biggest blocker if not successful
+- when patches were applied, surface patch state briefly:
+  - `patches_applied`
+  - patch branch
+  - README fidelity impact
+  - highest patch risk
 
 ## `COMMANDS.md`
 
@@ -57,7 +62,15 @@ Suggested top-level keys:
 - `goal_priority`
 - `status`
 - `documented_command_status`
+- `documented_command`
+- `documented_command_kind`
+- `documented_command_source`
+- `documented_command_section`
 - `patches_applied`
+- `patch_branch`
+- `readme_fidelity`
+- `highest_patch_risk`
+- `verified_commit_count`
 - `outputs`
 - `notes`
 
@@ -75,7 +88,10 @@ Only create this file when repository files were modified.
 Requirements:
 
 - record patch branch name
+- record highest patch risk
 - record verified commits in order
-- explain what changed and why
+- explain what changed and why for each verified commit
 - explain how each change was verified
 - state whether README fidelity was preserved, clarified, or diverged
+- record changed files for each verified commit
+- keep human-readable prose in the user's language when practical, but preserve commit hashes, branch names, and command strings verbatim

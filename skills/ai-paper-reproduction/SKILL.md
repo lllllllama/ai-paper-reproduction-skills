@@ -1,6 +1,6 @@
 ---
 name: ai-paper-reproduction
-description: Main orchestration skill for README-first reproduction of AI paper repositories. Use when the user wants an end-to-end minimal trustworthy reproduction flow that reads the repo, selects the smallest documented inference or evaluation target, coordinates setup and execution sub-skills, enforces conservative patch rules, and writes the standardized `repro_outputs/` bundle. Do not use for paper summary, generic environment setup, isolated repo scanning, or standalone command execution without orchestration.
+description: Main orchestration skill for README-first reproduction of AI paper repositories. Use when the user wants an end-to-end minimal trustworthy reproduction flow that reads the repo, selects the smallest documented inference or evaluation target, coordinates the intake, setup, execution, and optional paper-gap sub-skills, enforces conservative patch rules, and writes the standardized `repro_outputs/` bundle. Do not use for paper summary, generic environment setup, isolated repo scanning, standalone command execution, or broad research assistance outside repository-grounded reproduction.
 ---
 
 # ai-paper-reproduction
@@ -11,6 +11,7 @@ description: Main orchestration skill for README-first reproduction of AI paper 
 - The target is a code repository with a README, scripts, configs, or documented commands.
 - The goal is a minimal trustworthy run, not unlimited experimentation.
 - The user needs standardized outputs that another human or model can audit quickly.
+- The task spans more than one stage, such as intake plus setup, or setup plus execution plus reporting.
 
 ## Do not use when
 
@@ -18,6 +19,7 @@ description: Main orchestration skill for README-first reproduction of AI paper 
 - The task is to design a new model, benchmark suite, or training pipeline from scratch.
 - The repository is not centered on AI or does not expose a documented reproduction path.
 - The user primarily wants a deep code refactor rather than README-first reproduction.
+- The user is explicitly asking for only one narrow phase that a sub-skill already covers cleanly.
 
 ## Success criteria
 
@@ -93,7 +95,7 @@ See `references/patch-policy.md`.
 3. Select the smallest trustworthy reproduction target.
 4. Call `env-and-assets-bootstrap` to prepare environment assumptions and asset paths.
 5. Run a conservative smoke check or documented command with `minimal-run-and-audit`.
-6. Use `paper-context-resolver` only if README and repo files leave a reproduction-critical gap.
+6. Use `paper-context-resolver` only if README and repo files leave a narrow reproduction-critical gap that blocks the current target.
 7. Write the standardized outputs.
 8. Give the user a short final note in the user's language.
 

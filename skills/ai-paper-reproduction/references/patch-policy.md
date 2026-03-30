@@ -57,8 +57,15 @@ Keep verified patch commits sparse:
 Every patch must be reflected in `PATCHES.md` with:
 
 - branch
+- highest risk
 - commit hash
 - changed files
 - rationale
 - verification
 - README fidelity impact
+
+If no repository files were modified:
+
+- do not create `PATCHES.md`
+- keep `patches_applied` false in `status.json`
+- keep the explanation in `SUMMARY.md` or `LOG.md` focused on the run and blocker, not on hypothetical patches

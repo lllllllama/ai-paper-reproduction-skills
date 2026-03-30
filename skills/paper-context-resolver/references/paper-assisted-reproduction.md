@@ -4,6 +4,8 @@
 
 Use paper context only to unblock README-first reproduction when the repository leaves a critical gap.
 
+Only invoke this step after README and repo inspection already produced a concrete unanswered question.
+
 ## Source order
 
 1. paper link explicitly provided by the README
@@ -18,6 +20,18 @@ Use paper context only to unblock README-first reproduction when the repository 
 - evaluation protocol details
 - checkpoint or model variant mapping
 - critical runtime assumptions
+
+## Trigger discipline
+
+Good trigger:
+
+- "README is ambiguous about the evaluation split. Check the linked paper and record the conflict if needed."
+
+Bad trigger:
+
+- "Summarize this paper."
+- "Find the paper for this repository title and explain it."
+- "Tell me everything the paper changed compared with prior work."
 
 ## Default exclusions
 

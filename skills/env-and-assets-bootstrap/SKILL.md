@@ -1,6 +1,6 @@
 ---
 name: env-and-assets-bootstrap
-description: Sub-skill for environment and asset preparation in README-first AI repo reproduction. Use when the task is specifically to prepare a conservative conda-first environment, resolve checkpoints or datasets or cache paths from README-first evidence, and produce setup assumptions before execution. Do not use for repo scanning, full orchestration, paper interpretation, or final run reporting.
+description: Sub-skill for environment and asset preparation in README-first AI repo reproduction. Use when the task is specifically to prepare a conservative conda-first environment, checkpoint and dataset path assumptions, cache location hints, and setup notes before any run on a README-documented repository. Do not use for repo scanning, full orchestration, paper interpretation, final run reporting, or generic environment setup that is not tied to a specific reproduction target.
 ---
 
 # env-and-assets-bootstrap
@@ -10,12 +10,14 @@ description: Sub-skill for environment and asset preparation in README-first AI 
 - After repo intake identifies a credible reproduction target.
 - When environment creation or asset path preparation is needed before running commands.
 - When the repo depends on checkpoints, datasets, or cache directories.
+- When the user explicitly wants setup help before any run attempt.
 
 ## When not to apply
 
 - When the repository already ships a ready-to-run environment that does not need translation.
 - When the task is only to scan and plan.
 - When the task is only to report results from commands that already ran.
+- When the request is a generic conda or package-management question outside repo reproduction.
 
 ## Clear boundaries
 
@@ -36,7 +38,7 @@ description: Sub-skill for environment and asset preparation in README-first AI 
 - conservative environment setup notes
 - candidate conda commands
 - asset path plan
-- checkpoint and dataset source notes
+- checkpoint and dataset source hints
 - unresolved dependency or asset risks
 
 ## Notes

@@ -11,6 +11,7 @@ Requirements:
 - if patches are needed, keep them conservative and auditable
 - write outputs to `repro_outputs/`
 - keep human-readable outputs in my language, but keep `status.json` keys in English
+- use `paper-context-resolver` only if a concrete reproduction gap remains after README and repo inspection
 
 At the end, give me:
 
@@ -18,3 +19,7 @@ At the end, give me:
 - the selected documented command
 - any blocker
 - the generated output files
+
+Short version:
+
+> Reproduce this AI repo with `ai-paper-reproduction`. Stay README-first, prefer documented inference or evaluation, avoid unnecessary repo edits, and write audited outputs to `repro_outputs/`.

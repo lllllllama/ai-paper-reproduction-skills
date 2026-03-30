@@ -112,6 +112,14 @@
       "expected_any": [],
       "expected_top": null,
       "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver"]
+    },
+    {
+      "id": "negative_title_only_paper_lookup",
+      "type": "negative",
+      "prompt": "Find the paper for this repository title and explain what it is about.",
+      "expected_any": [],
+      "expected_top": null,
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver"]
     }
   ]
 }
