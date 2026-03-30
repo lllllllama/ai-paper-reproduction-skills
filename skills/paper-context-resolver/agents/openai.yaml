@@ -1,0 +1,3 @@
+display_name: Paper Context Resolver
+short_description: Resolve reproduction-critical gaps from primary paper sources without overriding README by default.
+default_prompt: Use the linked paper only to resolve reproduction-critical details such as dataset split evaluation protocol or checkpoint mapping, and record any README conflicts.

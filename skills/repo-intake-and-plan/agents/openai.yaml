@@ -1,0 +1,3 @@
+display_name: Repo Intake And Plan
+short_description: Scan an AI repo and extract the smallest credible reproduction plan.
+default_prompt: Scan this repository, extract documented commands, classify inference evaluation and training paths, and recommend the minimum trustworthy reproduction target.

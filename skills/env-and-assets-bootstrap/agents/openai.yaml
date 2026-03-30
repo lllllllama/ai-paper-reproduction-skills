@@ -1,0 +1,3 @@
+display_name: Env And Assets Bootstrap
+short_description: Prepare conservative conda-first environment and asset assumptions for AI repo reproduction.
+default_prompt: Prepare a conda-first environment and a conservative checkpoint dataset and cache plan using README-first evidence.

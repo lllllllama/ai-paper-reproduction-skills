@@ -52,16 +52,48 @@ It is not a generic research toolbox. It is a focused skill set for:
 
 ## Quick start
 
-1. Copy or install this skill repository into your Codex skills workspace.
-2. Point Codex at a target AI paper repository.
-3. Use the main skill request pattern below.
-4. Review the generated `repro_outputs/` bundle.
+1. Clone this repository.
+2. Install the skills into your Codex skills directory.
+3. Validate the local repository after changes.
+4. Point Codex at a target AI paper repository.
+5. Use the main skill request pattern below.
+6. Review the generated `repro_outputs/` bundle.
 
 Example natural-language request:
 
 > Reproduce this repository with the `ai-paper-reproduction` skill. Stay README-first, aim for the smallest trustworthy documented inference or evaluation run, and write outputs to `repro_outputs/`.
 
-## Installation idea
+## Install to Codex
+
+Default target:
+
+- Windows: `%USERPROFILE%\\.codex\\skills`
+- macOS or Linux: `${HOME}/.codex/skills`
+- If `CODEX_HOME` is set, the installer uses `${CODEX_HOME}/skills`
+
+Install by copying the skill folders:
+
+```bash
+python scripts/install_skills.py --force
+```
+
+Install to a custom skills directory:
+
+```bash
+python scripts/install_skills.py --target /path/to/skills --force
+```
+
+Install by symlink instead of copy:
+
+```bash
+python scripts/install_skills.py --mode symlink --force
+```
+
+Validate the repository before or after publishing:
+
+```bash
+python scripts/validate_repo.py
+```
 
 This repository is intentionally lightweight:
 
@@ -74,6 +106,22 @@ If you want to adapt it:
 - edit the skill policies under `skills/*/references/`
 - adjust templates under `skills/ai-paper-reproduction/assets/`
 - extend the helper scripts under `skills/*/scripts/`
+- run `python scripts/validate_repo.py` before committing
+
+## Maintenance
+
+This repository is maintained as a skill collection, not as a Python application.
+
+Practical maintenance rules:
+
+- keep front matter names aligned with folder names
+- keep `SKILL.md` concise and move detailed rules into `references/`
+- keep reusable templates in `assets/`
+- keep deterministic logic in `scripts/`
+- preserve stable English machine-readable fields in `status.json`
+- prefer backward-compatible output changes
+
+For contributor workflow and repository checks, see `CONTRIBUTING.md`.
 
 ## Output bundle
 
@@ -116,7 +164,13 @@ It does not try to:
 ```text
 ai-paper-reproduction-skill/
   README.md
+  CONTRIBUTING.md
   .gitignore
+  .editorconfig
+  .github/workflows/validate.yml
+  scripts/
+    install_skills.py
+    validate_repo.py
   skills/
     ai-paper-reproduction/
     repo-intake-and-plan/
