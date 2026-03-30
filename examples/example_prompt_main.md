@@ -1,25 +1,22 @@
 # Example Prompt: Main Skill
 
-Use `ai-paper-reproduction` on this AI paper repository.
+Most users should start with `ai-paper-reproduction`.
 
-Requirements:
+## Shortest example
+
+Use `ai-paper-reproduction` on this AI repo. Stay README-first, prefer documented inference or evaluation, avoid unnecessary repo edits, and write outputs to `repro_outputs/`.
+
+## Main skill with paper-assisted gap resolution
+
+Use `ai-paper-reproduction` on this AI repo. Stay README-first, choose the smallest trustworthy documented target, and only use `paper-context-resolver` if the README is missing a reproduction-critical detail such as the evaluation split or checkpoint mapping.
+
+## Slightly more explicit example
+
+Use `ai-paper-reproduction` on this AI paper repository.
 
 - stay README-first
 - choose the smallest trustworthy documented target
 - prefer documented inference, then documented evaluation, then training startup only if needed
 - avoid repo code changes unless clearly necessary
-- if patches are needed, keep them conservative and auditable
-- write outputs to `repro_outputs/`
 - keep human-readable outputs in my language, but keep `status.json` keys in English
-- use `paper-context-resolver` only if a concrete reproduction gap remains after README and repo inspection
-
-At the end, give me:
-
-- a short result summary
-- the selected documented command
-- any blocker
-- the generated output files
-
-Short version:
-
-> Reproduce this AI repo with `ai-paper-reproduction`. Stay README-first, prefer documented inference or evaluation, avoid unnecessary repo edits, and write audited outputs to `repro_outputs/`.
+- write outputs to `repro_outputs/`

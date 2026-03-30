@@ -49,7 +49,7 @@ Release validation currently includes:
 
 ### Real-repo trials
 
-The main flow has been trialed against a small set of public AI repositories. See [real_repo_trials.md](/D:/test_projects/ai-paper-reproduction-skill/examples/real_repo_trials.md).
+The main flow has been trialed against a small set of public AI repositories. See [examples/real_repo_trials.md](examples/real_repo_trials.md).
 
 ### Known limits
 
