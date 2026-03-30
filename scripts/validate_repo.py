@@ -116,6 +116,7 @@ def validate_repo(root: Path) -> Tuple[List[str], List[str]]:
     for rel in [
         "scripts/test_trigger_boundaries.py",
         "scripts/test_readme_selection.py",
+        "scripts/test_output_rendering.py",
         "tests/trigger_cases.json",
         "tests/readme_selection_cases.json",
         "references/trigger-boundary-policy.md",

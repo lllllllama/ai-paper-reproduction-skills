@@ -93,6 +93,9 @@ Validate the repository before or after publishing:
 
 ```bash
 python scripts/validate_repo.py
+python scripts/test_trigger_boundaries.py
+python scripts/test_readme_selection.py
+python scripts/test_output_rendering.py
 ```
 
 This repository is intentionally lightweight:
@@ -122,6 +125,17 @@ Practical maintenance rules:
 - prefer backward-compatible output changes
 
 For contributor workflow and repository checks, see `CONTRIBUTING.md`.
+
+## Release check
+
+Before publishing changes, run:
+
+```bash
+python scripts/validate_repo.py
+python scripts/test_trigger_boundaries.py
+python scripts/test_readme_selection.py
+python scripts/test_output_rendering.py
+```
 
 ## Output bundle
 
