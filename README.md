@@ -15,10 +15,10 @@ Use this repository when you want Codex to reproduce an AI paper repo by reading
 
 ## Quick Start
 
-Install the main skill with the `skills` CLI:
+Install all 5 skills with the `skills` CLI:
 
 ```bash
-npx skills add lllllllama/ai-paper-reproduction-skills --skill ai-paper-reproduction
+npx skills add lllllllama/ai-paper-reproduction-skills --all
 ```
 
 Then start with the main skill:
@@ -29,16 +29,16 @@ Use ai-paper-reproduction on this AI repo. Stay README-first, prefer documented 
 
 Installation note:
 
-- Most users only need the main skill:
-
-```bash
-npx skills add lllllllama/ai-paper-reproduction-skills --skill ai-paper-reproduction
-```
-
-- To install the full multi-skill repository:
+- Default install for this repository:
 
 ```bash
 npx skills add lllllllama/ai-paper-reproduction-skills --all
+```
+
+- If you only want the main skill:
+
+```bash
+npx skills add lllllllama/ai-paper-reproduction-skills --skill ai-paper-reproduction
 ```
 
 - The repository keeps one `SKILL.md` per skill under `skills/`, so it is compatible with multi-skill GitHub repository discovery in the `skills` CLI.
