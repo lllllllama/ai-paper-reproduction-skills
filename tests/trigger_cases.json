@@ -2,20 +2,20 @@
   "schema_version": "1.0",
   "cases": [
     {
-      "id": "main_end_to_end_cn",
+      "id": "main_end_to_end_en",
       "type": "positive",
-      "prompt": "请用 ai-paper-reproduction 帮我复现这个 AI 论文仓库，先读 README，优先跑 documented inference 或 eval，并输出 repro_outputs。",
+      "prompt": "Use ai-paper-reproduction to reproduce this AI repository end-to-end. Read the README first, prefer documented inference or evaluation, and write repro_outputs.",
       "expected_any": ["ai-paper-reproduction"],
       "expected_top": "ai-paper-reproduction",
-      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver"]
+      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "repo_scan_only_en",
       "type": "positive",
-      "prompt": "Scan this repository, read the README and config files, extract documented commands, and recommend the smallest credible reproduction target.",
+      "prompt": "Scan this repository, read the README and config files, extract documented commands, and recommend the smallest credible reproduction target. Do not run anything yet.",
       "expected_any": ["repo-intake-and-plan"],
       "expected_top": "repo-intake-and-plan",
-      "forbidden": ["env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver"]
+      "forbidden": ["env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "env_setup_only_en",
@@ -23,7 +23,7 @@
       "prompt": "Prepare a conda-first environment and asset plan for this AI repo, including checkpoint, dataset, and cache path assumptions before any run.",
       "expected_any": ["env-and-assets-bootstrap"],
       "expected_top": "env-and-assets-bootstrap",
-      "forbidden": ["repo-intake-and-plan", "minimal-run-and-audit", "paper-context-resolver"]
+      "forbidden": ["repo-intake-and-plan", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "run_and_report_only_en",
@@ -31,7 +31,7 @@
       "prompt": "Run the selected documented inference command, capture evidence, and write SUMMARY.md, COMMANDS.md, LOG.md, and status.json.",
       "expected_any": ["minimal-run-and-audit"],
       "expected_top": "minimal-run-and-audit",
-      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "paper-context-resolver"]
+      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "paper_gap_only_en",
@@ -39,7 +39,47 @@
       "prompt": "The README is missing the exact evaluation split. Use the linked paper only to resolve that reproduction-critical detail and record any conflict.",
       "expected_any": ["paper-context-resolver"],
       "expected_top": "paper-context-resolver",
-      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit"]
+      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "analyze-project", "safe-debug"]
+    },
+    {
+      "id": "analyze_project_only_en",
+      "type": "positive",
+      "prompt": "Read and understand this deep learning repository. Inspect the model structure, training entrypoint, config relationships, and likely insertion points without modifying code or running heavy jobs.",
+      "expected_any": ["analyze-project"],
+      "expected_top": "analyze-project",
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "safe-debug"]
+    },
+    {
+      "id": "safe_debug_traceback_en",
+      "type": "positive",
+      "prompt": "Traceback (most recent call last): RuntimeError: CUDA out of memory",
+      "expected_any": ["safe-debug"],
+      "expected_top": "safe-debug",
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project"]
+    },
+    {
+      "id": "safe_debug_loss_nan_en",
+      "type": "positive",
+      "prompt": "Training does not converge and loss is nan after a few iterations. Diagnose the likely cause conservatively before patching anything.",
+      "expected_any": ["safe-debug"],
+      "expected_top": "safe-debug",
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project"]
+    },
+    {
+      "id": "safe_debug_checkpoint_fail_en",
+      "type": "positive",
+      "prompt": "RuntimeError while loading the checkpoint: size mismatch for classifier.weight and unexpected key in state_dict.",
+      "expected_any": ["safe-debug"],
+      "expected_top": "safe-debug",
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project"]
+    },
+    {
+      "id": "safe_debug_training_failure_without_debug_word",
+      "type": "positive",
+      "prompt": "The distributed training launch now fails with NCCL timeout and the command hangs after rank 0 initializes.",
+      "expected_any": ["safe-debug"],
+      "expected_top": "safe-debug",
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project"]
     },
     {
       "id": "paper_summary_negative",
@@ -47,7 +87,7 @@
       "prompt": "Summarize this paper, explain the novelty, compare it with prior work, and give me a related work overview.",
       "expected_any": [],
       "expected_top": null,
-      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver"]
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "generic_conda_negative",
@@ -55,7 +95,7 @@
       "prompt": "Create a conda environment for my computer vision project and suggest some useful packages.",
       "expected_any": [],
       "expected_top": null,
-      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver"]
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "generic_benchmark_design_negative",
@@ -63,7 +103,7 @@
       "prompt": "Design a new benchmark suite and a training plan for a multimodal model from scratch.",
       "expected_any": [],
       "expected_top": null,
-      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver"]
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "boundary_repo_scan_vs_main",
@@ -71,7 +111,7 @@
       "prompt": "Read this AI repo README and files and tell me the documented inference, eval, and train commands. Do not run anything yet.",
       "expected_any": ["repo-intake-and-plan"],
       "expected_top": "repo-intake-and-plan",
-      "forbidden": ["minimal-run-and-audit", "paper-context-resolver"]
+      "forbidden": ["minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "boundary_setup_vs_main",
@@ -79,7 +119,7 @@
       "prompt": "Before we execute anything, figure out the conda environment, checkpoint paths, and dataset locations for this README-documented repo.",
       "expected_any": ["env-and-assets-bootstrap"],
       "expected_top": "env-and-assets-bootstrap",
-      "forbidden": ["minimal-run-and-audit", "paper-context-resolver"]
+      "forbidden": ["minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "boundary_run_vs_main",
@@ -87,7 +127,7 @@
       "prompt": "We already selected the documented command. Just run it conservatively and write the standardized outputs.",
       "expected_any": ["minimal-run-and-audit"],
       "expected_top": "minimal-run-and-audit",
-      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "paper-context-resolver"]
+      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "boundary_paper_vs_summary",
@@ -95,15 +135,31 @@
       "prompt": "Do not summarize the paper. Only resolve which dataset split and evaluation protocol the reproduction should use because the README is ambiguous.",
       "expected_any": ["paper-context-resolver"],
       "expected_top": "paper-context-resolver",
-      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit"]
+      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "analyze-project", "safe-debug"]
+    },
+    {
+      "id": "boundary_analysis_vs_debug",
+      "type": "boundary",
+      "prompt": "Review the code structure of this model repo, inspect suspicious implementation patterns, and give conservative suggestions. There is no active traceback right now.",
+      "expected_any": ["analyze-project"],
+      "expected_top": "analyze-project",
+      "forbidden": ["safe-debug", "minimal-run-and-audit", "env-and-assets-bootstrap"]
+    },
+    {
+      "id": "boundary_debug_vs_analysis",
+      "type": "boundary",
+      "prompt": "Expected all tensors to be on the same device, but found at least two devices. Diagnose the failure and propose the smallest safe fix before editing code.",
+      "expected_any": ["safe-debug"],
+      "expected_top": "safe-debug",
+      "forbidden": ["analyze-project", "minimal-run-and-audit", "env-and-assets-bootstrap"]
     },
     {
       "id": "negative_non_repo_debugging",
       "type": "negative",
-      "prompt": "Debug this PyTorch training loop bug and refactor the model code for readability.",
+      "prompt": "Debug this generic Python training loop bug and refactor the code for readability.",
       "expected_any": [],
       "expected_top": null,
-      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver"]
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "negative_dataset_download_only",
@@ -111,7 +167,7 @@
       "prompt": "Download COCO 2017 and organize it for later experiments.",
       "expected_any": [],
       "expected_top": null,
-      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver"]
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "negative_title_only_paper_lookup",
@@ -119,7 +175,7 @@
       "prompt": "Find the paper for this repository title and explain what it is about.",
       "expected_any": [],
       "expected_top": null,
-      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver"]
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     }
   ]
 }

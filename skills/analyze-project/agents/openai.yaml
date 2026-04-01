@@ -1,0 +1,3 @@
+display_name: Analyze Project
+short_description: Read and understand a deep learning repository, map entrypoints, and flag suspicious implementation patterns without editing code.
+default_prompt: Analyze this deep learning project conservatively. Explain model structure, training and inference entrypoints, config relationships, likely insertion points, and suspicious implementation patterns without modifying code.

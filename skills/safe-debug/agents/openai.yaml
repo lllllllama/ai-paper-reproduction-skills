@@ -1,0 +1,3 @@
+display_name: Safe Debug
+short_description: Diagnose research tracebacks and training failures conservatively before any patching.
+default_prompt: Diagnose this deep learning research error conservatively. Analyze the traceback or symptom first, explain the likely cause, suggest the smallest safe fix, and do not patch code unless explicitly authorized.

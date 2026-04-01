@@ -34,6 +34,8 @@ ROOT_REQUIRED_TESTS = [
     "scripts/test_readme_selection.py",
     "scripts/test_output_rendering.py",
     "scripts/test_skill_registry.py",
+    "scripts/test_analysis_output_rendering.py",
+    "scripts/test_safe_debug_output_rendering.py",
     "tests/trigger_cases.json",
     "tests/readme_selection_cases.json",
 ]

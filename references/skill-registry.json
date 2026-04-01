@@ -88,6 +88,31 @@
       }
     },
     {
+      "name": "analyze-project",
+      "tier": "public",
+      "lane": "trusted",
+      "compat": {
+        "preserve_name": true,
+        "aliases": []
+      },
+      "can_call": [],
+      "required_files": [
+        "SKILL.md",
+        "references/analysis-policy.md",
+        "agents/openai.yaml",
+        "scripts/analyze_project.py"
+      ],
+      "output_mode": {
+        "kind": "analysis",
+        "primary_dir": "analysis_outputs",
+        "artifacts": [
+          "SUMMARY.md",
+          "RISKS.md",
+          "status.json"
+        ]
+      }
+    },
+    {
       "name": "minimal-run-and-audit",
       "tier": "public",
       "lane": "trusted",
@@ -111,6 +136,31 @@
           "LOG.md",
           "status.json",
           "PATCHES.md"
+        ]
+      }
+    },
+    {
+      "name": "safe-debug",
+      "tier": "public",
+      "lane": "trusted",
+      "compat": {
+        "preserve_name": true,
+        "aliases": []
+      },
+      "can_call": [],
+      "required_files": [
+        "SKILL.md",
+        "references/debug-policy.md",
+        "agents/openai.yaml",
+        "scripts/safe_debug.py"
+      ],
+      "output_mode": {
+        "kind": "debug",
+        "primary_dir": "debug_outputs",
+        "artifacts": [
+          "DIAGNOSIS.md",
+          "PATCH_PLAN.md",
+          "status.json"
         ]
       }
     },
