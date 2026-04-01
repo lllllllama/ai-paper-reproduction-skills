@@ -220,6 +220,22 @@ def training_intent(text: str) -> bool:
     )
 
 
+def explicit_repro_intent(text: str) -> bool:
+    return contains_any(
+        text,
+        [
+            "use ai-paper-reproduction",
+            "end-to-end",
+            "orchestrate",
+            "repro_outputs",
+            "reproduce this ai repository",
+            "reproduce this repository",
+            "minimal-trustworthy reproduction flow",
+            "full reproduction flow",
+        ],
+    )
+
+
 def explore_authorization(text: str) -> bool:
     return contains_any(
         text,
@@ -439,7 +455,7 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
     if skill_name == "ai-paper-reproduction":
         if not has_repo:
             return 0.0
-        explicit_repro = contains_any(prompt_text, ["reproduce", "reproduction", "end-to-end", "orchestrate", "repro_outputs"])
+        explicit_repro = explicit_repro_intent(prompt_text)
         if explicit_repro:
             base_score += 6.0
         if wants_summary:

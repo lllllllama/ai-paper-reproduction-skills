@@ -15,7 +15,7 @@
       "prompt": "Scan this repository, read the README and config files, extract documented commands, and recommend the smallest credible reproduction target. Do not run anything yet.",
       "expected_any": ["repo-intake-and-plan"],
       "expected_top": "repo-intake-and-plan",
-      "forbidden": ["env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
+      "forbidden": ["ai-paper-reproduction", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "env_setup_only_en",
@@ -87,7 +87,7 @@
       "prompt": "The README is missing the exact evaluation split. Use the linked paper only to resolve that reproduction-critical detail and record any conflict.",
       "expected_any": ["paper-context-resolver"],
       "expected_top": "paper-context-resolver",
-      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "analyze-project", "safe-debug"]
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "analyze-project", "safe-debug"]
     },
     {
       "id": "analyze_project_only_en",
@@ -159,7 +159,7 @@
       "prompt": "Read this AI repo README and files and tell me the documented inference, eval, and train commands. Do not run anything yet.",
       "expected_any": ["repo-intake-and-plan"],
       "expected_top": "repo-intake-and-plan",
-      "forbidden": ["minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
+      "forbidden": ["ai-paper-reproduction", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "boundary_setup_vs_main",
@@ -207,7 +207,7 @@
       "prompt": "Do not summarize the paper. Only resolve which dataset split and evaluation protocol the reproduction should use because the README is ambiguous.",
       "expected_any": ["paper-context-resolver"],
       "expected_top": "paper-context-resolver",
-      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "analyze-project", "safe-debug"]
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "analyze-project", "safe-debug"]
     },
     {
       "id": "boundary_analysis_vs_debug",
