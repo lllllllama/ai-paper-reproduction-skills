@@ -1,3 +1,0 @@
-display_name: AI Paper Reproduction
-short_description: README-first orchestration for minimal trustworthy AI repo reproduction.
-default_prompt: Reproduce this AI paper repository with README-first rules, prefer documented inference or evaluation, and write standardized outputs to repro_outputs/.
