@@ -15,6 +15,7 @@ This repository separates trusted execution from exploratory work.
 - Direct commits are allowed inside the isolated experiment branch.
 - Exploration commits should be disposable and summary-oriented.
 - Never merge exploration results back into the trusted baseline without explicit researcher review.
+- `explore-code` and `explore-run` should both record the baseline ref and experiment branch in `explore_outputs/`.
 
 ## Savepoint guidance
 

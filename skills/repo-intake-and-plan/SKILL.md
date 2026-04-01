@@ -1,6 +1,6 @@
 ---
 name: repo-intake-and-plan
-description: Intake sub-skill for README-first AI repo reproduction. Use when the task is specifically to scan a repository, read the README and common project files, extract documented commands, classify inference, evaluation, and training candidates, and return the smallest trustworthy reproduction plan to the main skill. Do not use for environment setup, asset download, command execution, final reporting, paper lookup, or end-to-end orchestration.
+description: Narrow helper skill for README-first AI repo reproduction. Use when the task is specifically to scan a repository, read the README and common project files, extract documented commands, classify inference, evaluation, and training candidates, and return the smallest trustworthy reproduction plan to the main orchestrator. Do not use for environment setup, asset download, command execution, final reporting, paper lookup, or end-to-end orchestration.
 ---
 
 # repo-intake-and-plan
@@ -22,6 +22,7 @@ description: Intake sub-skill for README-first AI repo reproduction. Use when th
 ## Clear boundaries
 
 - This skill scans and plans.
+- This skill is helper-tier and should usually be orchestrator-invoked.
 - It does not install environments.
 - It does not prepare large assets.
 - It does not execute substantive reproduction commands.

@@ -13,6 +13,8 @@
         "repo-intake-and-plan",
         "env-and-assets-bootstrap",
         "minimal-run-and-audit",
+        "analyze-project",
+        "run-train",
         "paper-context-resolver"
       ],
       "required_files": [

@@ -2,132 +2,129 @@
 
 Codex multi-skill repository for deep learning research workflows with a trusted-lane default.
 
-The current implementation focus is a README-first paper reproduction cluster. The repository is expanding toward a broader research-skills layout with trusted and exploratory lanes while preserving the current public skill names.
+The repository now ships a trusted lane, an explore lane, and two helper skills. Existing public skill names remain unchanged for compatibility.
 
-The main skill is `ai-paper-reproduction`. Most users should still start there for end-to-end paper reproduction.
+## Core policy
 
-## What it optimizes for
+- trusted by default
+- README-first for reproduction
+- explicit exploration only
+- low-risk changes before code edits
+- audit-heavy trusted outputs
+- summary-heavy exploratory outputs
 
-- `README-first`
-- `inference/eval first`
-- `minimal trustworthy changes`
-- `auditable patching`
-- `trusted by default`
-- `explicit exploration only`
+Shared routing, branch, pitfall, and output rules live under [references/](references/).
 
-## Quick Start
+## Install
 
-Install the current 5-skill reproduction cluster with the `skills` CLI:
-
-```bash
-npx skills add lllllllama/ai-paper-reproduction-skills --all
-```
-
-Then start with the main public orchestrator:
-
-```text
-Use ai-paper-reproduction on this AI repo. Stay README-first, prefer documented inference or evaluation, avoid unnecessary repo changes, and write outputs to repro_outputs/.
-```
-
-## Current layout
-
-The repository currently ships one trusted reproduction cluster:
-
-- `ai-paper-reproduction`
-- `repo-intake-and-plan`
-- `env-and-assets-bootstrap`
-- `minimal-run-and-audit`
-- `paper-context-resolver`
-
-Planned trusted-lane additions:
-
-- repository and model analysis
-- safe research debugging
-- trusted training execution
-
-Planned explore-lane additions:
-
-- exploratory code adaptation
-- exploratory experiment running and ranking
-
-Repository-wide routing and safety rules live under [references/](references/).
-
-## Installation note
-
-- Default install for this repository:
+Install the full repository skill set:
 
 ```bash
 npx skills add lllllllama/ai-paper-reproduction-skills --all
 ```
 
-- If you only want the main skill:
+Install only the main orchestrator:
 
 ```bash
 npx skills add lllllllama/ai-paper-reproduction-skills --skill ai-paper-reproduction
 ```
 
-- The repository keeps one `SKILL.md` per skill under `skills/`, so it is compatible with multi-skill GitHub repository discovery in the `skills` CLI.
-- Machine-readable skill metadata lives in [references/skill-registry.json](references/skill-registry.json).
-
-## Current public skills
+## Trusted lane
 
 - `ai-paper-reproduction`
-  - orchestrates README-first reproduction from intake through reporting
+  - end-to-end README-first reproduction orchestrator
 - `env-and-assets-bootstrap`
-  - prepares conservative environment, checkpoint, dataset, and cache assumptions before execution
+  - conservative environment, checkpoint, dataset, and cache planning
 - `minimal-run-and-audit`
-  - captures conservative execution evidence and writes standardized `repro_outputs/`
+  - inference, evaluation, smoke, and sanity execution with `repro_outputs/`
+- `analyze-project`
+  - read-only repository and model analysis with `analysis_outputs/`
+- `run-train`
+  - trusted training execution with `train_outputs/`
+- `safe-debug`
+  - conservative research debugging with `debug_outputs/`
 
-## Current helper skills
+## Explore lane
+
+- `explore-code`
+  - isolated exploratory code adaptation and transplant work with `explore_outputs/`
+- `explore-run`
+  - isolated exploratory run planning, sweeps, and ranking with `explore_outputs/`
+
+## Helper skills
 
 - `repo-intake-and-plan`
-  - maps the repo, extracts documented commands, and recommends the smallest credible target
+  - narrow helper for repo scanning and documented command extraction
 - `paper-context-resolver`
-  - resolves a narrow paper-critical gap only when README and repo evidence are insufficient
+  - narrow helper for README-paper gap resolution
 
-## Output files
+These helper skills are usually orchestrator-invoked rather than primary user entrypoints.
 
-- `SUMMARY.md`
-  - first page result and main blocker
-- `COMMANDS.md`
-  - copyable setup, asset, run, and verification commands
-- `LOG.md`
-  - concise process record with evidence and decisions
-- `status.json`
-  - stable machine-readable status
-- `PATCHES.md`
-  - patch record, only when repository files were modified
+## How to use
 
-## Shared policies
+Trusted reproduction:
 
+```text
+Use ai-paper-reproduction on this AI repo. Stay README-first, prefer documented inference or evaluation, avoid unnecessary repo changes, and write outputs to repro_outputs/.
+```
+
+Read-only project analysis:
+
+```text
+Use analyze-project on this repo. Read the code, map the model and training entrypoints, and flag suspicious patterns without editing files.
+```
+
+Trusted training:
+
+```text
+Use run-train on this repo. Run the selected documented training command conservatively for startup verification and write train_outputs/.
+```
+
+Safe debug:
+
+```text
+Use safe-debug on this traceback. Diagnose the failure first, propose the smallest safe fix, and do not patch until I approve.
+```
+
+Explicit exploration:
+
+```text
+Use explore-code on an isolated branch. Try a LoRA adaptation for this backbone, keep it exploratory only, and summarize the changes in explore_outputs/.
+```
+
+```text
+Use explore-run on an experiment branch. Do a small-subset short-cycle sweep, rank the top runs, and treat the results as candidates only.
+```
+
+## Output directories
+
+- `repro_outputs/`
+  - trusted reproduction bundle
+- `analysis_outputs/`
+  - read-only project analysis
+- `debug_outputs/`
+  - trusted debug diagnosis and patch plan
+- `train_outputs/`
+  - trusted training execution bundle
+- `explore_outputs/`
+  - exploratory changeset and run ranking
+
+## Routing summary
+
+- ambiguous requests go to the trusted lane
+- exploration requires explicit authorization
+- trusted skills must not auto-route into exploration
+- explore skills must not claim trusted reproduction success
+- same-level skills should not call each other directly
+
+## Registry and policies
+
+- Skill registry: [references/skill-registry.json](references/skill-registry.json)
 - Routing policy: [references/routing-policy.md](references/routing-policy.md)
-- Research pitfall checklist: [references/research-pitfall-checklist.md](references/research-pitfall-checklist.md)
 - Branch and commit policy: [references/branch-and-commit-policy.md](references/branch-and-commit-policy.md)
 - Output contract: [references/output-contract.md](references/output-contract.md)
-- Skill registry: [references/skill-registry.json](references/skill-registry.json)
+- Research pitfall checklist: [references/research-pitfall-checklist.md](references/research-pitfall-checklist.md)
 
-## Language behavior
+## Scope
 
-- Human-readable outputs may follow the user's language.
-- Machine-readable fields in trusted status files stay in English.
-- Filenames stay in English.
-- Commands, paths, package names, and config keys stay unchanged.
-
-## Examples
-
-- Main skill examples: [examples/example_prompt_main.md](examples/example_prompt_main.md)
-- Sub-skill examples: [examples/example_prompt_subskills.md](examples/example_prompt_subskills.md)
-- Real repo trials: [examples/real_repo_trials.md](examples/real_repo_trials.md)
-- Release notes: [CHANGELOG.md](CHANGELOG.md)
-
-## Current scope
-
-- README-first reproduction of AI paper repositories
-- documented inference or evaluation first
-- training only as startup or partial verification unless explicitly needed
-- explicit blockers instead of silent semantic changes
-- trusted lane by default; exploration requires explicit intent
-
-## Not a general research mega-skill
-
-This repository is not a general paper summarizer or an unconstrained autonomous research agent. It aims to support deep learning research with explicit safety, auditability, and lane-aware boundaries.
+This repository is not a general paper summarizer or an unconstrained autonomous research agent. It is a lane-aware deep learning research toolkit that optimizes for safety, observability, and reuse.

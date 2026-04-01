@@ -1,6 +1,6 @@
 ---
 name: ai-paper-reproduction
-description: Main orchestrator for README-first AI repo reproduction. Use when the user wants an end-to-end, minimal-trustworthy reproduction flow that reads the repository first, selects the smallest documented inference or evaluation target, coordinates intake, setup, execution, and optional paper-gap resolution, enforces conservative patch rules, records evidence assumptions deviations and human decision points, and writes the standardized `repro_outputs/` bundle. Do not use for paper summary, generic environment setup, isolated repo scanning, standalone command execution, silent protocol changes, or broad research assistance outside repository-grounded reproduction.
+description: Main orchestrator for README-first AI repo reproduction. Use when the user wants an end-to-end, minimal-trustworthy reproduction flow that reads the repository first, selects the smallest documented inference or evaluation target, coordinates intake, setup, trusted execution, optional trusted training, optional repository analysis, and optional paper-gap resolution, enforces conservative patch rules, records evidence assumptions deviations and human decision points, and writes the standardized `repro_outputs/` bundle. Do not use for paper summary, generic environment setup, isolated repo scanning, standalone command execution, silent protocol changes, or broad research assistance outside repository-grounded reproduction.
 ---
 
 # ai-paper-reproduction
@@ -20,6 +20,7 @@ description: Main orchestrator for README-first AI repo reproduction. Use when t
 - The repository is not centered on AI or does not expose a documented reproduction path.
 - The user primarily wants a deep code refactor rather than README-first reproduction.
 - The user is explicitly asking for only one narrow phase that a sub-skill already covers cleanly.
+- The user is explicitly authorizing exploratory branch-only experimentation instead of trusted reproduction.
 
 ## Success criteria
 
@@ -105,11 +106,14 @@ See `references/research-safety-principles.md`.
 2. Call `repo-intake-and-plan` to scan the repository and extract documented commands.
 3. Select the smallest trustworthy reproduction target.
 4. Call `env-and-assets-bootstrap` to prepare environment assumptions and asset paths.
-5. Run a conservative smoke check or documented command with `minimal-run-and-audit`.
-6. Stop for human review if protocol meaning, model semantics, or result interpretation would otherwise be changed implicitly.
-7. Use `paper-context-resolver` only if README and repo files leave a narrow reproduction-critical gap that blocks the current target.
-8. Write the standardized outputs with evidence, assumptions, deviations, and next safe action.
-9. Give the user a short final note in the user's language.
+5. Call `analyze-project` only when repo structure, insertion points, or suspicious implementation patterns need a read-only pass before continuing.
+6. Run a conservative smoke check or documented inference or evaluation command with `minimal-run-and-audit`.
+7. If the selected trustworthy target is documented training startup, short-run verification, or resume, hand execution to `run-train` instead of `minimal-run-and-audit`.
+8. Stop for human review if protocol meaning, model semantics, or result interpretation would otherwise be changed implicitly.
+9. Use `paper-context-resolver` only if README and repo files leave a narrow reproduction-critical gap that blocks the current target.
+10. Never auto-route into `explore-code` or `explore-run`; exploration requires explicit user authorization.
+11. Write the standardized outputs with evidence, assumptions, deviations, and next safe action.
+12. Give the user a short final note in the user's language.
 
 ## Required outputs
 
@@ -142,3 +146,4 @@ Use the templates under `assets/` and the field rules in `references/output-spec
 - Prefer stable templates and simple schemas over ad hoc prose.
 - Keep machine-readable outputs backward compatible when possible.
 - Add new evidence sources only when they improve auditability without raising learning cost.
+- Treat `repo-intake-and-plan` and `paper-context-resolver` as narrow helpers, not primary public entrypoints.

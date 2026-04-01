@@ -9,7 +9,9 @@ Trusted-lane outputs should be audit-heavy and durable.
 Expected directories include:
 
 - `repro_outputs/`
-- future trusted-lane specializations such as `analysis_outputs/`, `debug_outputs/`, and `train_outputs/`
+- `analysis_outputs/`
+- `debug_outputs/`
+- `train_outputs/`
 
 Trusted output traits:
 
@@ -32,6 +34,7 @@ Explore output traits:
 - source references for transplanted or adapted modules recorded
 - enough context for a human to decide whether to continue
 - no implicit claim that exploratory gains are trusted baselines
+- isolated branch or worktree context recorded
 
 ## Compatibility
 

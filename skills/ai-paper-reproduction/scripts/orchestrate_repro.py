@@ -68,6 +68,19 @@ def choose_goal(commands: List[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
+def plan_skill_chain(selected_goal: str, include_analysis_pass: bool, include_paper_gap: bool) -> List[str]:
+    chain = [
+        "repo-intake-and-plan",
+        "env-and-assets-bootstrap",
+    ]
+    if include_analysis_pass:
+        chain.append("analyze-project")
+    chain.append("run-train" if selected_goal == "training" else "minimal-run-and-audit")
+    if include_paper_gap:
+        chain.append("paper-context-resolver")
+    return chain
+
+
 def maybe_run_command(repo_path: Path, command: str, timeout: int, user_language: str) -> Dict[str, Any]:
     if not command:
         return {
@@ -146,8 +159,11 @@ def build_context(
     run_data: Dict[str, Any],
     user_language: str,
     run_selected: bool,
+    include_analysis_pass: bool,
+    include_paper_gap: bool,
 ) -> Dict[str, Any]:
     chosen = choose_goal(command_data.get("commands", []))
+    skill_chain = plan_skill_chain(chosen["selected_goal"], include_analysis_pass, include_paper_gap)
     status = run_data["status"] if run_selected else "not_run"
     documented_status = (
         run_data["documented_command_status"]
@@ -224,6 +240,7 @@ def build_context(
         if section:
             source_note += text(user_language, f", section `{section}`", f"，章节 `{section}`")
         command_notes.append(source_note)
+    command_notes.append(f"Planned skill chain: {', '.join(skill_chain)}")
 
     if not chosen["documented_command"]:
         human_decisions_required.append(
@@ -246,6 +263,8 @@ def build_context(
         "readme_first": True,
         "selected_goal": chosen["selected_goal"],
         "goal_priority": chosen["goal_priority"],
+        "execution_skill": "run-train" if chosen["selected_goal"] == "training" else "minimal-run-and-audit",
+        "planned_skill_chain": skill_chain,
         "status": status,
         "documented_command_status": documented_status,
         "documented_command": chosen["documented_command"] or "None extracted",
@@ -356,6 +375,8 @@ def main() -> int:
     parser.add_argument("--output-dir", default="repro_outputs", help="Directory to write standardized outputs into.")
     parser.add_argument("--user-language", default="en", help="Language tag for human-readable reports.")
     parser.add_argument("--run-selected", action="store_true", help="Execute the selected documented command.")
+    parser.add_argument("--include-analysis-pass", action="store_true", help="Include analyze-project in the planned skill chain.")
+    parser.add_argument("--include-paper-gap", action="store_true", help="Include paper-context-resolver in the planned skill chain.")
     parser.add_argument("--timeout", type=int, default=120, help="Execution timeout in seconds for --run-selected.")
     args = parser.parse_args()
 
@@ -388,6 +409,8 @@ def main() -> int:
         run_data=run_data,
         user_language=args.user_language,
         run_selected=args.run_selected,
+        include_analysis_pass=args.include_analysis_pass,
+        include_paper_gap=args.include_paper_gap,
     )
 
     output_dir = Path(args.output_dir).resolve()
