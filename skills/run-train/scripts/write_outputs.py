@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compatibility wrapper for trusted verify output bundles."""
+"""Compatibility wrapper for trusted training output bundles."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ def load_shared_module():
 
 def main() -> int:
     module = load_shared_module()
-    return module.main(default_mode="repro", default_output_dir="repro_outputs")
+    return module.main(default_mode="train", default_output_dir="train_outputs")
 
 
 if __name__ == "__main__":

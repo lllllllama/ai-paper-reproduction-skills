@@ -201,6 +201,25 @@ def verify_intent(text: str) -> bool:
     )
 
 
+def training_intent(text: str) -> bool:
+    return contains_any(
+        text,
+        [
+            "run the selected training command",
+            "run the documented training command",
+            "training command",
+            "kick off training",
+            "full training kickoff",
+            "startup verification",
+            "short-run verification",
+            "resume training",
+            "resume from checkpoint",
+            "monitor training status",
+            "train_outputs",
+        ],
+    )
+
+
 def paper_gap_intent(text: str) -> bool:
     return contains_any(
         text,
@@ -349,6 +368,7 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
     wants_setup = setup_intent(prompt_text)
     has_setup_anchor = setup_anchor(prompt_text)
     wants_verify = verify_intent(prompt_text)
+    wants_train = training_intent(prompt_text)
     wants_paper_gap = paper_gap_intent(prompt_text)
     wants_summary = paper_summary_intent(prompt_text)
     wants_analysis = analysis_intent(prompt_text)
@@ -369,16 +389,20 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
             return 0.0
         if wants_scan and not explicit_repro:
             return 0.0
-        if wants_setup and not wants_verify and not explicit_repro:
+        if wants_setup and not wants_verify and not wants_train and not explicit_repro:
             return 0.0
         if wants_paper_gap and not explicit_repro:
+            return 0.0
+        if wants_train and not explicit_repro:
             return 0.0
         return base_score
 
     if skill_name == "repo-intake-and-plan":
         if not (has_repo and wants_scan):
-            return 0.0 if base_score < 3 else base_score - 3.0
+            return 0.0
         if wants_verify and not forbids_run:
+            base_score -= 4.0
+        if wants_train:
             base_score -= 4.0
         if wants_setup and not wants_scan:
             base_score -= 3.0
@@ -386,8 +410,8 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
 
     if skill_name == "env-and-assets-bootstrap":
         if not has_repo or not wants_setup or not has_setup_anchor:
-            return 0.0 if base_score < 3 else base_score - 3.0
-        if wants_verify:
+            return 0.0
+        if wants_verify or wants_train:
             base_score -= 2.0
         if has_error or wants_debug:
             base_score -= 3.0
@@ -396,11 +420,24 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
     if skill_name == "minimal-run-and-audit":
         if forbids_run:
             return 0.0
+        if wants_train:
+            return 0.0
         if not wants_verify:
-            return 0.0 if base_score < 3 else base_score - 3.0
+            return 0.0
         if wants_scan or wants_setup or has_error or wants_debug:
             base_score -= 2.0
         return base_score + 3.0
+
+    if skill_name == "run-train":
+        if has_error or wants_debug:
+            return 0.0
+        if not wants_train:
+            return 0.0
+        if not (has_repo or contains_any(prompt_text, ["selected training command", "documented training command", "resume from checkpoint"])):
+            return 0.0
+        if wants_verify and not wants_train:
+            base_score -= 2.0
+        return base_score + 4.0
 
     if skill_name == "paper-context-resolver":
         if wants_summary:
@@ -415,14 +452,14 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
         if has_error or wants_debug:
             base_score -= 5.0
         if not (has_repo and wants_analysis):
-            return 0.0 if base_score < 3 else base_score - 3.0
-        if wants_verify or wants_setup:
+            return 0.0
+        if wants_verify or wants_setup or wants_train:
             base_score -= 2.0
         return base_score + 4.0
 
     if skill_name == "safe-debug":
         if not (has_error or wants_debug):
-            return 0.0 if base_score < 3 else base_score - 3.0
+            return 0.0
         if wants_debug and not has_error and not has_research_debug_context:
             return 0.0
         if wants_analysis and not has_error:

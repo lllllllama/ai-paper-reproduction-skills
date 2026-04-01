@@ -31,7 +31,23 @@
       "prompt": "Run the selected documented inference command, capture evidence, and write SUMMARY.md, COMMANDS.md, LOG.md, and status.json.",
       "expected_any": ["minimal-run-and-audit"],
       "expected_top": "minimal-run-and-audit",
-      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "paper-context-resolver", "analyze-project", "safe-debug"]
+      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "paper-context-resolver", "analyze-project", "run-train", "safe-debug"]
+    },
+    {
+      "id": "run_train_startup_en",
+      "type": "positive",
+      "prompt": "Run the selected training command conservatively for startup verification, capture checkpoint and status evidence, and write train_outputs.",
+      "expected_any": ["run-train"],
+      "expected_top": "run-train",
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
+    },
+    {
+      "id": "run_train_resume_en",
+      "type": "positive",
+      "prompt": "Resume the documented training command for this repository from checkpoint latest.pt, monitor training status, and write train_outputs.",
+      "expected_any": ["run-train"],
+      "expected_top": "run-train",
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
       "id": "paper_gap_only_en",
@@ -127,7 +143,15 @@
       "prompt": "We already selected the documented command. Just run it conservatively and write the standardized outputs.",
       "expected_any": ["minimal-run-and-audit"],
       "expected_top": "minimal-run-and-audit",
-      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "paper-context-resolver", "analyze-project", "safe-debug"]
+      "forbidden": ["repo-intake-and-plan", "env-and-assets-bootstrap", "paper-context-resolver", "analyze-project", "run-train", "safe-debug"]
+    },
+    {
+      "id": "boundary_train_vs_verify",
+      "type": "boundary",
+      "prompt": "The training command is already selected. Resume training from checkpoint model_last.pt, capture status evidence, and write train_outputs.",
+      "expected_any": ["run-train"],
+      "expected_top": "run-train",
+      "forbidden": ["minimal-run-and-audit", "env-and-assets-bootstrap", "analyze-project", "safe-debug"]
     },
     {
       "id": "boundary_paper_vs_summary",

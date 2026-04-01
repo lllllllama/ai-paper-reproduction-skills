@@ -1,6 +1,6 @@
 ---
 name: minimal-run-and-audit
-description: Execution and reporting sub-skill for README-first AI repo reproduction. Use when the task is specifically to capture or normalize evidence from the selected smoke test or documented inference or evaluation command and write standardized `repro_outputs/` files, including patch notes when repository files changed. Do not use for initial repo intake, generic environment setup, paper lookup, target selection, or end-to-end orchestration by itself.
+description: Trusted-lane execution and reporting skill for README-first AI repo reproduction. Use when the task is specifically to capture or normalize evidence from the selected smoke test or documented inference or evaluation command and write standardized `repro_outputs/` files, including patch notes when repository files changed. Do not use for training execution, initial repo intake, generic environment setup, paper lookup, target selection, or end-to-end orchestration by itself.
 ---
 
 # minimal-run-and-audit
@@ -9,7 +9,7 @@ description: Execution and reporting sub-skill for README-first AI repo reproduc
 
 - After a reproduction target and setup plan exist.
 - When the main skill needs execution evidence and normalized outputs.
-- When a smoke test, documented inference run, documented evaluation run, or training startup verification is appropriate.
+- When a smoke test, documented inference run, documented evaluation run, or other short non-training verification is appropriate.
 - When the user already knows what command should be attempted and wants execution plus reporting only.
 
 ## When not to apply
@@ -25,6 +25,7 @@ description: Execution and reporting sub-skill for README-first AI repo reproduc
 - It may receive execution evidence from the main skill or a thin helper.
 - It does not choose the overall target on its own.
 - It does not perform broad paper analysis.
+- It does not own training startup, resume, or long-running training state.
 - It should not normalize risky code edits into acceptable practice.
 
 ## Input expectations

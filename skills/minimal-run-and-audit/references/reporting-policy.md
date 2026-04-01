@@ -8,7 +8,7 @@ Keep reports short, factual, and easy to audit.
 
 - separate facts from inferences
 - mention the documented command explicitly
-- mention whether the run was full, partial, smoke-only, or blocked
+- mention whether the non-training run was full, partial, smoke-only, sanity-only, or blocked
 - explain the main blocker without burying it
 - when patches were applied, mention patch state briefly in `SUMMARY.md` and keep the full audit in `PATCHES.md`
 
@@ -25,3 +25,4 @@ Keep reports short, factual, and easy to audit.
 - long narrative journals
 - vague "it should work" language
 - hiding unsupported assumptions
+- treating training startup or resume as part of this skill

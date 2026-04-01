@@ -1,3 +1,3 @@
 display_name: Minimal Run And Audit
-short_description: Run the selected trustworthy command and write standardized reproduction outputs.
-default_prompt: Run the selected smoke or documented command conservatively, capture execution evidence, and write SUMMARY.md COMMANDS.md LOG.md and status.json.
+short_description: Run the selected inference, evaluation, smoke, or sanity command and write standardized reproduction outputs.
+default_prompt: Run the selected smoke, inference, evaluation, or sanity command conservatively, capture execution evidence, and write SUMMARY.md COMMANDS.md LOG.md and status.json.

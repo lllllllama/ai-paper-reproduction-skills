@@ -1,0 +1,3 @@
+display_name: Run Train
+short_description: Execute a selected training command conservatively and write standardized train_outputs.
+default_prompt: Run the selected training command conservatively, capture startup, resume, and status evidence, and write SUMMARY.md COMMANDS.md LOG.md and status.json into train_outputs.

@@ -140,6 +140,32 @@
       }
     },
     {
+      "name": "run-train",
+      "tier": "public",
+      "lane": "trusted",
+      "compat": {
+        "preserve_name": true,
+        "aliases": []
+      },
+      "can_call": [],
+      "required_files": [
+        "SKILL.md",
+        "references/training-policy.md",
+        "agents/openai.yaml",
+        "scripts/write_outputs.py"
+      ],
+      "output_mode": {
+        "kind": "train",
+        "primary_dir": "train_outputs",
+        "artifacts": [
+          "SUMMARY.md",
+          "COMMANDS.md",
+          "LOG.md",
+          "status.json"
+        ]
+      }
+    },
+    {
       "name": "safe-debug",
       "tier": "public",
       "lane": "trusted",
