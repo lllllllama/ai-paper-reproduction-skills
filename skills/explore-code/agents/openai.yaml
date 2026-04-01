@@ -1,0 +1,3 @@
+display_name: Explore Code
+short_description: Make isolated exploratory code adaptations and write explore_outputs summaries.
+default_prompt: On an isolated branch or worktree, make exploratory code adaptations conservatively, summarize the changes, and write CHANGESET.md TOP_RUNS.md and status.json into explore_outputs.

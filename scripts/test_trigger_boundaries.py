@@ -220,6 +220,62 @@ def training_intent(text: str) -> bool:
     )
 
 
+def explore_authorization(text: str) -> bool:
+    return contains_any(
+        text,
+        [
+            "explore",
+            "try it",
+            "scan a batch",
+            "idle gpu",
+            "experiment branch",
+            "isolated branch",
+            "isolated worktree",
+            "candidate only",
+            "not the trusted baseline",
+            "okay to commit exploratory modifications",
+        ],
+    )
+
+
+def explore_code_intent(text: str) -> bool:
+    return contains_any(
+        text,
+        [
+            "lora",
+            "adapter",
+            "transplant module",
+            "copy the module",
+            "copy a module",
+            "replace the head",
+            "backbone adaptation",
+            "migrate module",
+            "module combination",
+            "stitch together",
+            "smallest adaptation",
+        ],
+    )
+
+
+def explore_run_intent(text: str) -> bool:
+    return contains_any(
+        text,
+        [
+            "small subset",
+            "short-cycle",
+            "short cycle",
+            "batch sweep",
+            "sweep",
+            "idle gpu",
+            "top runs",
+            "guess-and-check",
+            "quick transfer-learning",
+            "rank candidate runs",
+            "exploratory runs",
+        ],
+    )
+
+
 def paper_gap_intent(text: str) -> bool:
     return contains_any(
         text,
@@ -369,6 +425,9 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
     has_setup_anchor = setup_anchor(prompt_text)
     wants_verify = verify_intent(prompt_text)
     wants_train = training_intent(prompt_text)
+    has_explore_auth = explore_authorization(prompt_text)
+    wants_explore_code = explore_code_intent(prompt_text)
+    wants_explore_run = explore_run_intent(prompt_text)
     wants_paper_gap = paper_gap_intent(prompt_text)
     wants_summary = paper_summary_intent(prompt_text)
     wants_analysis = analysis_intent(prompt_text)
@@ -395,6 +454,8 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
             return 0.0
         if wants_train and not explicit_repro:
             return 0.0
+        if has_explore_auth:
+            return 0.0
         return base_score
 
     if skill_name == "repo-intake-and-plan":
@@ -403,6 +464,8 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
         if wants_verify and not forbids_run:
             base_score -= 4.0
         if wants_train:
+            base_score -= 4.0
+        if has_explore_auth:
             base_score -= 4.0
         if wants_setup and not wants_scan:
             base_score -= 3.0
@@ -413,6 +476,8 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
             return 0.0
         if wants_verify or wants_train:
             base_score -= 2.0
+        if has_explore_auth:
+            base_score -= 4.0
         if has_error or wants_debug:
             base_score -= 3.0
         return base_score + 3.0
@@ -424,6 +489,8 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
             return 0.0
         if not wants_verify:
             return 0.0
+        if has_explore_auth:
+            return 0.0
         if wants_scan or wants_setup or has_error or wants_debug:
             base_score -= 2.0
         return base_score + 3.0
@@ -433,11 +500,29 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
             return 0.0
         if not wants_train:
             return 0.0
+        if has_explore_auth:
+            return 0.0
         if not (has_repo or contains_any(prompt_text, ["selected training command", "documented training command", "resume from checkpoint"])):
             return 0.0
         if wants_verify and not wants_train:
             base_score -= 2.0
         return base_score + 4.0
+
+    if skill_name == "explore-code":
+        if has_error or wants_debug:
+            return 0.0
+        if not (has_explore_auth and wants_explore_code):
+            return 0.0
+        if wants_train and not wants_explore_code:
+            base_score -= 2.0
+        return base_score + 5.0
+
+    if skill_name == "explore-run":
+        if has_error or wants_debug:
+            return 0.0
+        if not (has_explore_auth and wants_explore_run):
+            return 0.0
+        return base_score + 5.0
 
     if skill_name == "paper-context-resolver":
         if wants_summary:
@@ -453,12 +538,14 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
             base_score -= 5.0
         if not (has_repo and wants_analysis):
             return 0.0
-        if wants_verify or wants_setup or wants_train:
+        if wants_verify or wants_setup or wants_train or has_explore_auth:
             base_score -= 2.0
         return base_score + 4.0
 
     if skill_name == "safe-debug":
         if not (has_error or wants_debug):
+            return 0.0
+        if has_explore_auth:
             return 0.0
         if wants_debug and not has_error and not has_research_debug_context:
             return 0.0

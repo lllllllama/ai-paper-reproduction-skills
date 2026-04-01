@@ -166,6 +166,63 @@
       }
     },
     {
+      "name": "explore-code",
+      "tier": "public",
+      "lane": "explore",
+      "compat": {
+        "preserve_name": true,
+        "aliases": []
+      },
+      "can_call": [
+        "minimal-run-and-audit",
+        "run-train"
+      ],
+      "required_files": [
+        "SKILL.md",
+        "references/explore-policy.md",
+        "agents/openai.yaml",
+        "scripts/write_outputs.py"
+      ],
+      "output_mode": {
+        "kind": "explore",
+        "primary_dir": "explore_outputs",
+        "artifacts": [
+          "CHANGESET.md",
+          "TOP_RUNS.md",
+          "status.json"
+        ]
+      }
+    },
+    {
+      "name": "explore-run",
+      "tier": "public",
+      "lane": "explore",
+      "compat": {
+        "preserve_name": true,
+        "aliases": []
+      },
+      "can_call": [
+        "minimal-run-and-audit",
+        "run-train"
+      ],
+      "required_files": [
+        "SKILL.md",
+        "references/execution-policy.md",
+        "agents/openai.yaml",
+        "scripts/plan_variants.py",
+        "scripts/write_outputs.py"
+      ],
+      "output_mode": {
+        "kind": "explore",
+        "primary_dir": "explore_outputs",
+        "artifacts": [
+          "CHANGESET.md",
+          "TOP_RUNS.md",
+          "status.json"
+        ]
+      }
+    },
+    {
       "name": "safe-debug",
       "tier": "public",
       "lane": "trusted",

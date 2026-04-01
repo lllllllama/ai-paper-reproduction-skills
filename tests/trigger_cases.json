@@ -50,6 +50,38 @@
       "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
+      "id": "explore_code_lora_en",
+      "type": "positive",
+      "prompt": "On an isolated branch, explore adding LoRA to this backbone with the smallest adaptation. It is okay to commit exploratory modifications directly to the experiment branch and write explore_outputs.",
+      "expected_any": ["explore-code"],
+      "expected_top": "explore-code",
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "run-train", "paper-context-resolver", "analyze-project", "safe-debug"]
+    },
+    {
+      "id": "explore_code_module_transplant_en",
+      "type": "positive",
+      "prompt": "Use an isolated worktree to transplant a module from another paper repo, keep the change as a candidate only, and record the exploratory changeset.",
+      "expected_any": ["explore-code"],
+      "expected_top": "explore-code",
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "run-train", "paper-context-resolver", "analyze-project", "safe-debug"]
+    },
+    {
+      "id": "explore_run_sweep_en",
+      "type": "positive",
+      "prompt": "Use idle GPU on an experiment branch to run a batch sweep with a small subset and short-cycle guess-and-check trials, then rank the top runs in explore_outputs.",
+      "expected_any": ["explore-run"],
+      "expected_top": "explore-run",
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "run-train", "paper-context-resolver", "analyze-project", "safe-debug"]
+    },
+    {
+      "id": "explore_run_transfer_trial_en",
+      "type": "positive",
+      "prompt": "Explore quick transfer-learning runs on an isolated branch with a small subset first, then rank candidate runs and recommend next trials.",
+      "expected_any": ["explore-run"],
+      "expected_top": "explore-run",
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "run-train", "paper-context-resolver", "analyze-project", "safe-debug"]
+    },
+    {
       "id": "paper_gap_only_en",
       "type": "positive",
       "prompt": "The README is missing the exact evaluation split. Use the linked paper only to resolve that reproduction-critical detail and record any conflict.",
@@ -152,6 +184,22 @@
       "expected_any": ["run-train"],
       "expected_top": "run-train",
       "forbidden": ["minimal-run-and-audit", "env-and-assets-bootstrap", "analyze-project", "safe-debug"]
+    },
+    {
+      "id": "boundary_explore_code_vs_trusted",
+      "type": "boundary",
+      "prompt": "On an isolated branch, explore adapter insertion for this backbone and keep the output as a candidate only. Do not treat it as the trusted baseline.",
+      "expected_any": ["explore-code"],
+      "expected_top": "explore-code",
+      "forbidden": ["run-train", "minimal-run-and-audit", "safe-debug", "analyze-project"]
+    },
+    {
+      "id": "boundary_explore_run_vs_trusted",
+      "type": "boundary",
+      "prompt": "Use idle GPU to explore a small-subset short-cycle sweep on an experiment branch and rank candidate runs; this is not the trusted baseline.",
+      "expected_any": ["explore-run"],
+      "expected_top": "explore-run",
+      "forbidden": ["run-train", "minimal-run-and-audit", "safe-debug", "analyze-project"]
     },
     {
       "id": "boundary_paper_vs_summary",
