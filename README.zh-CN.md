@@ -76,6 +76,24 @@ npx skills add lllllllama/ai-paper-reproduction-skills --all
 npx skills add lllllllama/ai-paper-reproduction-skills --skill ai-paper-reproduction
 ```
 
+Local clone, Codex:
+
+```bash
+python scripts/install_skills.py --client codex --target ~/.codex/skills --force
+```
+
+Local clone, Claude Code:
+
+```bash
+python scripts/install_skills.py --client claude --target ~/.claude/skills --force
+```
+
+Project-scoped Claude Code install:
+
+```bash
+python scripts/install_skills.py --client claude --target ./.claude/skills --force
+```
+
 ## 🧩 当前公开 skill 矩阵
 
 | Lane | Skill | 作用 |
@@ -195,6 +213,8 @@ flowchart TD
 
 ```bash
 python scripts/validate_repo.py
+python scripts/test_bootstrap_env.py
+python scripts/test_install_targets.py
 python scripts/test_skill_registry.py
 python scripts/test_trigger_boundaries.py
 python scripts/test_readme_selection.py
@@ -212,7 +232,8 @@ python scripts/test_training_lane_routing.py
 如果安装行为变更，还应额外运行：
 
 ```bash
-python scripts/install_skills.py --target ./tmp/skills --force
+python scripts/install_skills.py --client codex --target ./tmp/codex-skills --force
+python scripts/install_skills.py --client claude --target ./tmp/claude-skills --force
 ```
 
 ## 🧠 路由摘要

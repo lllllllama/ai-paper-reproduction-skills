@@ -77,6 +77,8 @@ def main() -> int:
                 raise AssertionError(f"orchestrator dry-run failed to emit train_outputs/{rel}")
         if payload["setup_commands"][0]["command"] != "conda env create -f environment.yml":
             raise AssertionError("orchestrator failed to propagate the environment setup plan")
+        if payload["setup_commands"][0]["platforms"] != ["windows", "macos", "linux"]:
+            raise AssertionError("orchestrator failed to preserve setup command platform metadata")
         if payload["full_training_command"] != "python train.py --config configs/demo.yaml":
             raise AssertionError("orchestrator failed to preserve the fuller training command hint")
         if "hours" not in (payload["training_duration_hint"] or "") and "unknown" not in (payload["training_duration_hint"] or ""):
@@ -85,7 +87,7 @@ def main() -> int:
             raise AssertionError("orchestrator failed to mention the fuller training command in next_action")
 
         print("ok: True")
-        print("checks: 10")
+        print("checks: 11")
         print("failures: 0")
         return 0
     finally:

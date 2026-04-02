@@ -16,6 +16,8 @@ Prefer conda or Anaconda-style setup for AI paper repositories because it is com
 - Linux is the default reference environment.
 - Support Windows and macOS where practical.
 - If a repository is clearly Linux-only, record that rather than pretending otherwise.
+- When virtualenv activation is needed, emit platform-specific commands instead of a fake one-size-fits-all activation step.
+- Prefer Python entrypoints over shell-only helpers when the same setup logic should run on Windows, macOS, and Linux.
 
 ## Dependency handling
 

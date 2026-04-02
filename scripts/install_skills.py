@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install this repository's skill folders into a Codex skills directory."""
+"""Install this repository's skill folders into a Codex or Claude Code skills directory."""
 
 from __future__ import annotations
 
@@ -7,13 +7,24 @@ import argparse
 import os
 import shutil
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Mapping
 
 
-def default_target() -> Path:
-    codex_home = os.environ.get("CODEX_HOME")
-    base = Path(codex_home) if codex_home else Path.home() / ".codex"
-    return (base / "skills").resolve()
+def default_target(client: str, env: Mapping[str, str] | None = None, home: Path | None = None) -> Path:
+    env_map = os.environ if env is None else env
+    home_path = (home or Path.home()).expanduser()
+
+    if client == "codex":
+        codex_home = env_map.get("CODEX_HOME")
+        base = Path(codex_home).expanduser() if codex_home else home_path / ".codex"
+        return (base / "skills").resolve()
+
+    if client == "claude":
+        claude_home = env_map.get("CLAUDE_HOME")
+        base = Path(claude_home).expanduser() if claude_home else home_path / ".claude"
+        return (base / "skills").resolve()
+
+    raise ValueError(f"Unsupported client: {client}")
 
 
 def discover_skills(skills_root: Path) -> List[Path]:
@@ -79,11 +90,17 @@ def format_paths(paths: Iterable[Path]) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Install all skill folders into a Codex skills directory.")
+    parser = argparse.ArgumentParser(description="Install all skill folders into a Codex or Claude Code skills directory.")
+    parser.add_argument(
+        "--client",
+        choices=["codex", "claude"],
+        default="codex",
+        help="Which agent client to target. Defaults to Codex for backward compatibility.",
+    )
     parser.add_argument(
         "--target",
-        default=str(default_target()),
-        help="Target Codex skills directory. Defaults to CODEX_HOME/skills or ~/.codex/skills.",
+        default=None,
+        help="Override the skills directory. Defaults to CODEX_HOME/skills or ~/.codex/skills for Codex, and CLAUDE_HOME/skills or ~/.claude/skills for Claude Code.",
     )
     parser.add_argument(
         "--mode",
@@ -99,10 +116,14 @@ def main() -> int:
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parents[1]
-    target_root = Path(args.target).expanduser().resolve()
+    target_root = (
+        Path(args.target).expanduser().resolve()
+        if args.target
+        else default_target(args.client)
+    )
     installed = install_skills(repo_root, target_root, args.mode, args.force)
 
-    print(f"Installed {len(installed)} skills to {target_root}")
+    print(f"Installed {len(installed)} skills to {target_root} for {args.client}")
     print(format_paths(installed))
     return 0
 

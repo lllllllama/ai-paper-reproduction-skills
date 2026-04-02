@@ -7,7 +7,7 @@ description: Main orchestrator for README-first AI repo reproduction. Use when t
 
 ## Use when
 
-- The user wants Codex to reproduce an AI paper repository.
+- The user wants the agent to reproduce an AI paper repository.
 - The target is a code repository with a README, scripts, configs, or documented commands.
 - The goal is a minimal trustworthy run, not unlimited experimentation.
 - The user needs standardized outputs that another human or model can audit quickly.

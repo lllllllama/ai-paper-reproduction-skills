@@ -7,7 +7,7 @@ import argparse
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 ENV_FILES = [
@@ -18,6 +18,7 @@ ENV_FILES = [
     "pyproject.toml",
     "setup.py",
 ]
+ALL_PLATFORMS = ["windows", "macos", "linux"]
 
 
 def find_first(repo: Path, candidates: List[str]) -> Optional[Path]:
@@ -36,8 +37,30 @@ def parse_env_name(path: Path) -> Optional[str]:
     return match.group(1) if match else None
 
 
+def command_entry(label: str, command: str, platforms: Optional[List[str]] = None) -> Dict[str, Any]:
+    return {
+        "label": label,
+        "command": command,
+        "platforms": list(platforms or ALL_PLATFORMS),
+    }
+
+
+def venv_activation_commands() -> List[Dict[str, Any]]:
+    return [
+        command_entry("adapted", ".\\.venv\\Scripts\\Activate.ps1", ["windows"]),
+        command_entry("adapted", "source .venv/bin/activate", ["macos", "linux"]),
+    ]
+
+
+def append_venv_flow(setup_commands: List[Dict[str, Any]], install_command: Optional[str] = None) -> None:
+    setup_commands.append(command_entry("adapted", "python -m venv .venv"))
+    setup_commands.extend(venv_activation_commands())
+    if install_command:
+        setup_commands.append(command_entry("documented", install_command))
+
+
 def build_setup_commands(repo: Path) -> Dict[str, object]:
-    setup_commands: List[Dict[str, str]] = []
+    setup_commands: List[Dict[str, Any]] = []
     notes: List[str] = []
     unresolved: List[str] = []
 
@@ -46,10 +69,11 @@ def build_setup_commands(repo: Path) -> Dict[str, object]:
 
     if env_file is None:
         unresolved.append("No top-level environment specification file was found.")
+        setup_commands.append(command_entry("inferred", "python -m venv .venv"))
         setup_commands.extend(
             [
-                {"label": "inferred", "command": "python -m venv .venv"},
-                {"label": "inferred", "command": ". .venv/Scripts/activate"},
+                command_entry("inferred", ".\\.venv\\Scripts\\Activate.ps1", ["windows"]),
+                command_entry("inferred", "source .venv/bin/activate", ["macos", "linux"]),
             ]
         )
         notes.append("Defaulted to a virtualenv fallback because no environment file was detected.")
@@ -67,41 +91,18 @@ def build_setup_commands(repo: Path) -> Dict[str, object]:
         notes.append(f"Detected conda environment name `{env_name}`.")
 
     if env_file.name in {"environment.yml", "environment.yaml", "conda.yml"}:
-        setup_commands.append({"label": "documented", "command": f"conda env create -f {rel_env_file}"})
-        setup_commands.append(
-            {
-                "label": "adapted",
-                "command": f"conda activate {env_name}" if env_name else "conda activate <env-name>",
-            }
-        )
+        setup_commands.append(command_entry("documented", f"conda env create -f {rel_env_file}"))
+        setup_commands.append(command_entry("adapted", f"conda activate {env_name}" if env_name else "conda activate <env-name>"))
         if not env_name:
             unresolved.append("The conda environment name was not declared and still needs confirmation.")
     elif env_file.name == "requirements.txt":
-        setup_commands.extend(
-            [
-                {"label": "adapted", "command": "python -m venv .venv"},
-                {"label": "adapted", "command": ". .venv/Scripts/activate"},
-                {"label": "documented", "command": f"python -m pip install -r {rel_env_file}"},
-            ]
-        )
+        append_venv_flow(setup_commands, f"python -m pip install -r {rel_env_file}")
         notes.append("Fell back to a virtualenv plus requirements installation plan.")
     elif env_file.name == "pyproject.toml":
-        setup_commands.extend(
-            [
-                {"label": "adapted", "command": "python -m venv .venv"},
-                {"label": "adapted", "command": ". .venv/Scripts/activate"},
-                {"label": "documented", "command": "python -m pip install -e ."},
-            ]
-        )
+        append_venv_flow(setup_commands, "python -m pip install -e .")
         notes.append("Detected a pyproject-based installation flow.")
     elif env_file.name == "setup.py":
-        setup_commands.extend(
-            [
-                {"label": "adapted", "command": "python -m venv .venv"},
-                {"label": "adapted", "command": ". .venv/Scripts/activate"},
-                {"label": "documented", "command": "python -m pip install -e ."},
-            ]
-        )
+        append_venv_flow(setup_commands, "python -m pip install -e .")
         notes.append("Detected a setup.py-based editable install flow.")
 
     return {

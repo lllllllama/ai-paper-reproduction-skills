@@ -29,6 +29,9 @@ def command_block(items: Iterable[Any]) -> str:
     for item in values:
         if isinstance(item, dict):
             rendered.append(f"# [{item.get('label', 'inferred')}]")
+            platforms = item.get("platforms")
+            if platforms:
+                rendered.append(f"# platforms: {', '.join(str(platform) for platform in platforms)}")
             rendered.append(str(item.get("command", "")))
         else:
             rendered.append(str(item))

@@ -79,6 +79,7 @@
         "SKILL.md",
         "references/env-policy.md",
         "references/assets-policy.md",
+        "scripts/bootstrap_env.py",
         "scripts/bootstrap_env.sh",
         "scripts/plan_setup.py",
         "scripts/prepare_assets.py",

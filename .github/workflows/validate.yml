@@ -8,7 +8,13 @@ on:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -19,6 +25,12 @@ jobs:
       - name: Validate repository
         run: python scripts/validate_repo.py
 
+      - name: Test installer targets
+        run: python scripts/test_install_targets.py
+
+      - name: Test bootstrapper
+        run: python scripts/test_bootstrap_env.py
+
       - name: Test trigger boundaries
         run: python scripts/test_trigger_boundaries.py
 
@@ -28,5 +40,8 @@ jobs:
       - name: Test output rendering
         run: python scripts/test_output_rendering.py
 
-      - name: Test installer
-        run: python scripts/install_skills.py --target ./tmp/skills --force
+      - name: Test Codex installer
+        run: python scripts/install_skills.py --client codex --target ./tmp/codex-skills --force
+
+      - name: Test Claude installer
+        run: python scripts/install_skills.py --client claude --target ./tmp/claude-skills --force

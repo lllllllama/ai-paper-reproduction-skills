@@ -43,4 +43,5 @@ description: Environment and assets sub-skill for README-first AI repo reproduct
 
 ## Notes
 
-Use `references/env-policy.md`, `references/assets-policy.md`, `scripts/bootstrap_env.sh`, `scripts/plan_setup.py`, and `scripts/prepare_assets.py`.
+Use `references/env-policy.md`, `references/assets-policy.md`, `scripts/bootstrap_env.py`, `scripts/plan_setup.py`, and `scripts/prepare_assets.py`.
+Use `scripts/bootstrap_env.sh` only as a POSIX wrapper around the Python bootstrapper when a shell entrypoint is more convenient.

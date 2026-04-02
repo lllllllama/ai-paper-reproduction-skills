@@ -7,6 +7,8 @@
 
 This repository is built around one default rule: `trusted by default`. It is meant to provide auditable, reviewable, lane-aware workflows for reproduction, analysis, training, debugging, and explicitly authorized exploration.
 
+The skill directories follow the `SKILL.md` open format, so the same repository can be installed into both Codex and Claude Code. Claude Code can load these skills from `~/.claude/skills/<skill-name>/SKILL.md` or `.claude/skills/<skill-name>/SKILL.md`, and project skills can be invoked directly with `/skill-name`.
+
 🛠️ `ai-paper-reproduction` · 🧭 `env-and-assets-bootstrap` · 🔍 `analyze-project` · ✅ `minimal-run-and-audit` · 🧪 `run-train` · 🩺 `safe-debug` · 🧬 `explore-code` · 📈 `explore-run`
 
 ## 🧭 Repository Scope
@@ -64,17 +66,37 @@ flowchart TD
 
 ## 📦 Install
 
-Install the full repository skill set:
+Install the full repository skill set in Codex:
 
 ```bash
 npx skills add lllllllama/ai-paper-reproduction-skills --all
 ```
 
-Install only the main orchestrator:
+Install only the main orchestrator in Codex:
 
 ```bash
 npx skills add lllllllama/ai-paper-reproduction-skills --skill ai-paper-reproduction
 ```
+
+Install from a local clone into Codex:
+
+```bash
+python scripts/install_skills.py --client codex --target ~/.codex/skills --force
+```
+
+Install from a local clone into Claude Code:
+
+```bash
+python scripts/install_skills.py --client claude --target ~/.claude/skills --force
+```
+
+Install into a project-scoped Claude Code skills directory:
+
+```bash
+python scripts/install_skills.py --client claude --target ./.claude/skills --force
+```
+
+Claude Code can auto-invoke these skills when the descriptions match, or you can call them explicitly with commands such as `/ai-paper-reproduction` and `/safe-debug`.
 
 ## 🧩 Public Skill Matrix
 
@@ -195,6 +217,8 @@ Run the full validation set:
 
 ```bash
 python scripts/validate_repo.py
+python scripts/test_bootstrap_env.py
+python scripts/test_install_targets.py
 python scripts/test_skill_registry.py
 python scripts/test_trigger_boundaries.py
 python scripts/test_readme_selection.py
@@ -212,8 +236,11 @@ python scripts/test_training_lane_routing.py
 If installation behavior changed, also run:
 
 ```bash
-python scripts/install_skills.py --target ./tmp/skills --force
+python scripts/install_skills.py --client codex --target ./tmp/codex-skills --force
+python scripts/install_skills.py --client claude --target ./tmp/claude-skills --force
 ```
+
+GitHub Actions validates this repository on `ubuntu-latest`, `macos-latest`, and `windows-latest`.
 
 ## 🧠 Routing Summary
 

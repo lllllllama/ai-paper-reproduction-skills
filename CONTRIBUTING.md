@@ -9,6 +9,8 @@ Keep changes small, lane-aware, and easy to validate.
 
 ```bash
 python scripts/validate_repo.py
+python scripts/test_bootstrap_env.py
+python scripts/test_install_targets.py
 python scripts/test_skill_registry.py
 python scripts/test_trigger_boundaries.py
 python scripts/test_readme_selection.py
@@ -26,7 +28,8 @@ python scripts/test_training_lane_routing.py
 3. If installation behavior changed, also run:
 
 ```bash
-python scripts/install_skills.py --target ./tmp/skills --force
+python scripts/install_skills.py --client codex --target ./tmp/codex-skills --force
+python scripts/install_skills.py --client claude --target ./tmp/claude-skills --force
 ```
 
 4. Commit only after the repository validates cleanly.
@@ -62,6 +65,7 @@ python scripts/install_skills.py --target ./tmp/skills --force
 - `python scripts/test_trigger_boundaries.py` passes
 - `python scripts/test_readme_selection.py` passes
 - all lane-specific rendering tests pass
+- installer and bootstrapper checks pass for both Codex and Claude Code entrypoints
 - orchestrator dry-run still reflects the intended trusted chain
 - helper/public/explore metadata still matches the actual boundaries
 - output contract changes are intentional and documented

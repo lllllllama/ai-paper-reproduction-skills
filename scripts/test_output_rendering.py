@@ -32,7 +32,7 @@ def write_context(path: Path) -> Dict[str, object]:
         "main_blocker": "The documented command exited with code 1.",
         "next_action": "Prepare environment and assets, then retry the documented command.",
         "next_safe_action": "Review the blocker and confirm the next documented verification step.",
-        "setup_commands": [{"label": "adapted", "command": "conda env create -f environment.yml"}],
+        "setup_commands": [{"label": "adapted", "command": "conda env create -f environment.yml", "platforms": ["windows", "macos", "linux"]}],
         "asset_commands": [{"label": "inferred", "command": "# placeholder asset step"}],
         "run_commands": [{"label": "documented", "command": "python demo.py --prompt test"}],
         "verification_commands": [{"label": "inferred", "command": "# placeholder verification step"}],
@@ -104,6 +104,7 @@ def main() -> int:
 
         assert_contains(commands, "# Commands", "COMMANDS.md")
         assert_contains(commands, "# [adapted]", "COMMANDS.md")
+        assert_contains(commands, "# platforms: windows, macos, linux", "COMMANDS.md")
         assert_contains(commands, "# [documented]", "COMMANDS.md")
         assert_contains(commands, "# [inferred]", "COMMANDS.md")
         assert_contains(summary, "# Reproduction Summary", "SUMMARY.md")
@@ -143,7 +144,7 @@ def main() -> int:
             raise AssertionError("status.json lost the expected verified_commit_count value")
 
         print("ok: True")
-        print("checks: 22")
+        print("checks: 23")
         print("failures: 0")
         return 0
     finally:

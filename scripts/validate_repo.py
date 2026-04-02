@@ -32,6 +32,8 @@ ROOT_REQUIRED_FILES = [
     "references/output-contract.md",
 ]
 ROOT_REQUIRED_TESTS = [
+    "scripts/test_bootstrap_env.py",
+    "scripts/test_install_targets.py",
     "scripts/test_trigger_boundaries.py",
     "scripts/test_readme_selection.py",
     "scripts/test_output_rendering.py",
@@ -47,7 +49,7 @@ ROOT_REQUIRED_TESTS = [
     "tests/trigger_cases.json",
     "tests/readme_selection_cases.json",
 ]
-IGNORED_PATH_PARTS = {"tmp", "artifacts", "repro_outputs", "__pycache__", ".git"}
+IGNORED_PATH_PARTS = {"tmp", "artifacts", "repro_outputs", "__pycache__", ".git", ".claude", ".codex"}
 
 
 def parse_front_matter(skill_md: Path) -> Dict[str, str]:
