@@ -304,8 +304,7 @@ Recommended future registry entry:
   "required_files": [
     "SKILL.md",
     "references/explore-policy.md",
-    "scripts/orchestrate_explore.py",
-    "agents/openai.yaml"
+    "scripts/orchestrate_explore.py"
   ],
   "output_mode": {
     "kind": "explore",

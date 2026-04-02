@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install this repository's skill folders into a Codex or Claude Code skills directory."""
+"""Install this repository's skill folders into a client-neutral or client-specific skills directory."""
 
 from __future__ import annotations
 
@@ -13,6 +13,11 @@ from typing import Iterable, List, Mapping
 def default_target(client: str, env: Mapping[str, str] | None = None, home: Path | None = None) -> Path:
     env_map = os.environ if env is None else env
     home_path = (home or Path.home()).expanduser()
+
+    if client == "agents":
+        agents_home = env_map.get("AGENTS_HOME")
+        base = Path(agents_home).expanduser() if agents_home else home_path / ".agents"
+        return (base / "skills").resolve()
 
     if client == "codex":
         codex_home = env_map.get("CODEX_HOME")
@@ -90,17 +95,17 @@ def format_paths(paths: Iterable[Path]) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Install all skill folders into a Codex or Claude Code skills directory.")
+    parser = argparse.ArgumentParser(description="Install all skill folders into a neutral, Codex, or Claude Code skills directory.")
     parser.add_argument(
         "--client",
-        choices=["codex", "claude"],
-        default="codex",
-        help="Which agent client to target. Defaults to Codex for backward compatibility.",
+        choices=["agents", "codex", "claude"],
+        default="agents",
+        help="Which skill directory convention to target. Defaults to the neutral Agent Skills directory for cross-client compatibility.",
     )
     parser.add_argument(
         "--target",
         default=None,
-        help="Override the skills directory. Defaults to CODEX_HOME/skills or ~/.codex/skills for Codex, and CLAUDE_HOME/skills or ~/.claude/skills for Claude Code.",
+        help="Override the skills directory. Defaults to AGENTS_HOME/skills or ~/.agents/skills for neutral installs, CODEX_HOME/skills or ~/.codex/skills for Codex, and CLAUDE_HOME/skills or ~/.claude/skills for Claude Code.",
     )
     parser.add_argument(
         "--mode",

@@ -1,9 +1,22 @@
-# ai-paper-reproduction-skills
+# 🚀 ai-paper-reproduction-skills
 
-[![Language: English](https://img.shields.io/badge/Language-English-1F6FEB?style=for-the-badge)](./README.md)
-[![语言：简体中文](https://img.shields.io/badge/%E8%AF%AD%E8%A8%80-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-238636?style=for-the-badge)](./README.zh-CN.md)
+<p>
+  <a href="./README.md">🇺🇸 English</a> ·
+  <a href="./README.zh-CN.md">🇨🇳 简体中文</a>
+</p>
+
+<p>
+  <img alt="trusted by default" src="https://img.shields.io/badge/lane-trusted%20by%20default-1f6feb?style=flat-square">
+  <img alt="explicit exploration" src="https://img.shields.io/badge/explore-explicit%20only-238636?style=flat-square">
+  <img alt="clients" src="https://img.shields.io/badge/clients-Agent%20Skills%20%C2%B7%20Codex%20%C2%B7%20Claude%20Code-6f42c1?style=flat-square">
+  <img alt="skills" src="https://img.shields.io/badge/skills-11-8b949e?style=flat-square">
+</p>
 
 Lane-aware skill repository for deep learning research workflows.
+
+> 🧭 Trusted for reproduction, setup, analysis, training verification, and debugging.  
+> 🔬 Explore only when the researcher explicitly authorizes candidate-only work.  
+> 🤝 Share the same `SKILL.md` skills across Agent Skills, Codex, and Claude Code.
 
 This repository is built around one default rule: `trusted by default`.
 
@@ -12,11 +25,11 @@ This repository is built around one default rule: `trusted by default`.
 - Trusted outputs are auditable and durable.
 - Explore outputs are candidate-only and disposable.
 
-The skills use the open `SKILL.md` layout, so the same repository can be installed into both Codex and Claude Code. Claude Code also supports project-scoped skills from `./.claude/skills/`.
+The skills use the open `SKILL.md` layout, so the same repository can be installed into neutral Agent Skills directories as well as Codex and Claude Code. For shared local installs, prefer `~/.agents/skills/` or `./.agents/skills/`. Client-specific installs under `~/.codex/skills/` and `~/.claude/skills/` remain supported.
 
-`ai-paper-reproduction` · `research-explore` · `env-and-assets-bootstrap` · `analyze-project` · `minimal-run-and-audit` · `run-train` · `safe-debug` · `explore-code` · `explore-run`
+🛠️ `ai-paper-reproduction` · 🔬 `research-explore` · 🧭 `env-and-assets-bootstrap` · 🔍 `analyze-project` · ✅ `minimal-run-and-audit` · 🧪 `run-train` · 🩺 `safe-debug` · 🧬 `explore-code` · 📈 `explore-run`
 
-## What This Repo Covers
+## ✨ What This Repo Covers
 
 **In scope**
 
@@ -35,7 +48,7 @@ The skills use the open `SKILL.md` layout, so the same repository can be install
 - Default large-scale code rewriting
 - Implicit experimentation on top of a trusted baseline
 
-## Choose an Entry Point
+## 🧭 Choose an Entry Point
 
 | If you want to... | Use |
 |---|---|
@@ -54,9 +67,9 @@ Bundled helper skills:
 - `repo-intake-and-plan`
 - `paper-context-resolver`
 
-## Lanes
+## 🔀 Lanes
 
-### Trusted lane
+### 🛡️ Trusted lane
 
 Use the trusted lane for reproduction, setup, analysis, bounded execution, training verification, and debugging.
 
@@ -64,7 +77,7 @@ Use the trusted lane for reproduction, setup, analysis, bounded execution, train
 - Output directories: `repro_outputs/`, `train_outputs/`, `analysis_outputs/`, `debug_outputs/`
 - Default stance: preserve scientific meaning, minimize semantic changes, surface assumptions and blockers
 
-### Explore lane
+### 🔬 Explore lane
 
 Use the explore lane only when the researcher explicitly authorizes candidate-only exploratory work.
 
@@ -75,9 +88,20 @@ Use the explore lane only when the researcher explicitly authorizes candidate-on
 
 `current_research` should be a durable reference such as a branch, commit, checkpoint, run record, or already-trained local model state. It does not imply a trusted baseline; it is the context the exploration branches from.
 
-### Helper lane
+### 🧰 Helper lane
 
 Helpers are narrow and should usually be orchestrator-invoked rather than used as the first entry point.
+
+## 🤝 Client Compatibility
+
+`SKILL.md` is the canonical cross-client contract in this repository.
+
+- Required for portability: `SKILL.md`, repository-local `scripts/`, and `references/`
+- Optional Codex UI metadata: `agents/openai.yaml`
+- Optional Claude Code project entrypoints: `.claude/commands/*.md`
+- Not allowed: making skill behavior depend on a client-specific metadata file
+
+See [references/client-compatibility-policy.md](references/client-compatibility-policy.md).
 
 ```mermaid
 flowchart TD
@@ -100,7 +124,25 @@ flowchart TD
     C1 -. helper .-> H2[paper-context-resolver]
 ```
 
-## Install
+## 📦 Install
+
+Install from a local clone into a neutral Agent Skills directory:
+
+```bash
+python scripts/install_skills.py --client agents --target ~/.agents/skills --force
+```
+
+Install into a project-scoped neutral Agent Skills directory:
+
+```bash
+python scripts/install_skills.py --client agents --target ./.agents/skills --force
+```
+
+Install with the default neutral target:
+
+```bash
+python scripts/install_skills.py --force
+```
 
 Install the full repository skill set in Codex:
 
@@ -134,7 +176,14 @@ python scripts/install_skills.py --client claude --target ./.claude/skills --for
 
 Claude Code can auto-invoke these skills when the descriptions match, or you can call them directly with commands such as `/ai-paper-reproduction`, `/research-explore`, and `/safe-debug`.
 
-## Public Skill Matrix
+This repository also ships project-scoped Claude Code slash commands under `.claude/commands/` for the main entrypoints:
+
+- `/ai-paper-reproduction`
+- `/research-explore`
+- `/analyze-project`
+- `/safe-debug`
+
+## 🧩 Public Skill Matrix
 
 | Lane | Skill | Purpose |
 |---|---|---|
@@ -150,9 +199,9 @@ Claude Code can auto-invoke these skills when the descriptions match, or you can
 | Helper | `repo-intake-and-plan` | Narrow helper for repo scanning and README command extraction |
 | Helper | `paper-context-resolver` | Narrow helper for README-paper gap resolution |
 
-## Core Flows
+## 🔄 Core Flows
 
-### Trusted reproduction flow
+### 🛠️ Trusted reproduction flow
 
 `ai-paper-reproduction` follows this high-level sequence:
 
@@ -167,7 +216,7 @@ Claude Code can auto-invoke these skills when the descriptions match, or you can
 6. Write `repro_outputs/`.
 7. If training was selected, also write `train_outputs/`.
 
-### Trusted training semantics
+### 🧪 Trusted training semantics
 
 Training is intentionally conservative in the trusted lane.
 
@@ -176,7 +225,7 @@ Training is intentionally conservative in the trusted lane.
 - The trusted lane does not silently convert this into an open-ended long run.
 - The output should surface the fuller training command, a conservative duration hint, and the next safe action for the researcher.
 
-### Exploratory research flow
+### 🔬 Exploratory research flow
 
 `research-explore` is the end-to-end explore orchestrator when the task spans both exploratory code work and exploratory runs.
 
@@ -189,7 +238,7 @@ Training is intentionally conservative in the trusted lane.
 
 The explore lane must not claim trusted reproduction success.
 
-## Output Directories
+## 📁 Output Directories
 
 | Directory | Purpose |
 |---|---|
@@ -199,7 +248,7 @@ The explore lane must not claim trusted reproduction success.
 | `debug_outputs/` | Safe debug diagnosis and patch plan |
 | `explore_outputs/` | Exploratory changeset and ranked run summary |
 
-## Example Prompts
+## 💬 Example Prompts
 
 **Trusted reproduction**
 
@@ -243,7 +292,7 @@ Use explore-code on an isolated branch. Try a LoRA adaptation for this backbone,
 Use explore-run on an experiment branch. Do a small-subset short-cycle sweep, rank the top runs, and treat the results as candidates only.
 ```
 
-## Local Validation
+## ✅ Local Validation
 
 Run the repository checks:
 
@@ -251,6 +300,7 @@ Run the repository checks:
 python scripts/validate_repo.py
 python scripts/test_skill_registry.py
 python scripts/test_trigger_boundaries.py
+python scripts/test_claude_command_wrappers.py
 python scripts/test_readme_selection.py
 ```
 
@@ -274,13 +324,14 @@ Run setup and installer regressions:
 python scripts/test_bootstrap_env.py
 python scripts/test_install_targets.py
 python scripts/test_setup_planning.py
+python scripts/install_skills.py --client agents --target ./tmp/agents-skills --force
 python scripts/install_skills.py --client codex --target ./tmp/codex-skills --force
 python scripts/install_skills.py --client claude --target ./tmp/claude-skills --force
 ```
 
 GitHub Actions validates this repository on `ubuntu-latest`, `macos-latest`, and `windows-latest`.
 
-## Routing Summary
+## 📐 Routing Summary
 
 - Ambiguous requests go to the trusted lane.
 - Exploration requires explicit authorization.
@@ -289,22 +340,23 @@ GitHub Actions validates this repository on `ubuntu-latest`, `macos-latest`, and
 - Peer leaf skills should not call each other directly.
 - End-to-end orchestration should happen through the public orchestrator for the relevant task family.
 
-## References
+## 📚 References
 
 - Skill registry: [references/skill-registry.json](references/skill-registry.json)
+- Client compatibility policy: [references/client-compatibility-policy.md](references/client-compatibility-policy.md)
 - Routing policy: [references/routing-policy.md](references/routing-policy.md)
 - Trigger boundary policy: [references/trigger-boundary-policy.md](references/trigger-boundary-policy.md)
 - Branch and commit policy: [references/branch-and-commit-policy.md](references/branch-and-commit-policy.md)
 - Output contract: [references/output-contract.md](references/output-contract.md)
 - Research pitfall checklist: [references/research-pitfall-checklist.md](references/research-pitfall-checklist.md)
 
-## Current Limits
+## ⚠️ Current Limits
 
 - `run-train` is a bounded training monitor, not a full long-running scheduler.
 - Trusted reproduction still avoids silent semantic changes.
 - Helper skills remain narrow and are not intended to become public catch-all entry points.
 - Exploratory work must stay isolated from trusted baselines.
 
-## Scope
+## 🎯 Scope
 
 This is a lane-aware deep learning research skill repository optimized for safety, observability, and reuse.

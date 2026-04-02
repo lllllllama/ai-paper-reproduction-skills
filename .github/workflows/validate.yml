@@ -34,6 +34,9 @@ jobs:
       - name: Test trigger boundaries
         run: python scripts/test_trigger_boundaries.py
 
+      - name: Test Claude command wrappers
+        run: python scripts/test_claude_command_wrappers.py
+
       - name: Test README selection
         run: python scripts/test_readme_selection.py
 
@@ -48,6 +51,9 @@ jobs:
 
       - name: Test research explore dry-run
         run: python scripts/test_research_explore_dry_run.py
+
+      - name: Test Agent Skills installer
+        run: python scripts/install_skills.py --client agents --target ./tmp/agents-skills --force
 
       - name: Test Codex installer
         run: python scripts/install_skills.py --client codex --target ./tmp/codex-skills --force

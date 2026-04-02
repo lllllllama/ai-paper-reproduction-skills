@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression checks for Codex and Claude Code installer target resolution."""
+"""Regression checks for neutral, Codex, and Claude Code installer target resolution."""
 
 from __future__ import annotations
 
@@ -16,16 +16,23 @@ def main() -> int:
     try:
         codex_home = temp_root / "codex-home"
         claude_home = temp_root / "claude-home"
+        agents_home = temp_root / "agents-home"
         fake_home = temp_root / "fake-home"
 
+        agents_target = default_target("agents", env={"AGENTS_HOME": str(agents_home)}, home=fake_home)
         codex_target = default_target("codex", env={"CODEX_HOME": str(codex_home)}, home=fake_home)
         claude_target = default_target("claude", env={"CLAUDE_HOME": str(claude_home)}, home=fake_home)
+        fallback_agents_target = default_target("agents", env={}, home=fake_home)
         fallback_claude_target = default_target("claude", env={}, home=fake_home)
 
+        if agents_target != (agents_home / "skills").resolve():
+            raise AssertionError("agents target resolution ignored AGENTS_HOME")
         if codex_target != (codex_home / "skills").resolve():
             raise AssertionError("codex target resolution ignored CODEX_HOME")
         if claude_target != (claude_home / "skills").resolve():
             raise AssertionError("claude target resolution ignored CLAUDE_HOME")
+        if fallback_agents_target != (fake_home / ".agents" / "skills").resolve():
+            raise AssertionError("agents fallback target did not resolve to ~/.agents/skills")
         if fallback_claude_target != (fake_home / ".claude" / "skills").resolve():
             raise AssertionError("claude fallback target did not resolve to ~/.claude/skills")
 
@@ -36,7 +43,7 @@ def main() -> int:
             raise AssertionError("installer lost SKILL.md during copy")
 
         print("ok: True")
-        print("checks: 5")
+        print("checks: 7")
         print("failures: 0")
         return 0
     finally:

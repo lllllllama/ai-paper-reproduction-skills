@@ -19,12 +19,17 @@ ROOT_REQUIRED_FILES = [
     "README.md",
     "CONTRIBUTING.md",
     ".editorconfig",
+    ".claude/commands/ai-paper-reproduction.md",
+    ".claude/commands/research-explore.md",
+    ".claude/commands/analyze-project.md",
+    ".claude/commands/safe-debug.md",
     "shared/scripts/write_explore_bundle.py",
     "shared/scripts/write_run_bundle.py",
     "scripts/install_skills.py",
     "scripts/validate_repo.py",
     "scripts/test_skill_registry.py",
     "references/skill-registry.json",
+    "references/client-compatibility-policy.md",
     "references/trigger-boundary-policy.md",
     "references/routing-policy.md",
     "references/research-pitfall-checklist.md",
@@ -47,6 +52,7 @@ ROOT_REQUIRED_TESTS = [
     "scripts/test_skill_registry.py",
     "scripts/test_analysis_output_rendering.py",
     "scripts/test_safe_debug_output_rendering.py",
+    "scripts/test_claude_command_wrappers.py",
     "tests/trigger_cases.json",
     "tests/readme_selection_cases.json",
 ]
@@ -220,8 +226,6 @@ def validate_repo(root: Path) -> Tuple[List[str], List[str]]:
         agent_yaml = skill_dir / "agents" / "openai.yaml"
         if agent_yaml.exists():
             errors.extend(validate_openai_yaml(agent_yaml))
-        else:
-            warnings.append(f"No agents/openai.yaml for {skill_dir.name}")
 
     errors.extend(validate_python_files(root))
 

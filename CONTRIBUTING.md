@@ -13,6 +13,7 @@ python scripts/test_bootstrap_env.py
 python scripts/test_install_targets.py
 python scripts/test_skill_registry.py
 python scripts/test_trigger_boundaries.py
+python scripts/test_claude_command_wrappers.py
 python scripts/test_readme_selection.py
 python scripts/test_output_rendering.py
 python scripts/test_train_output_rendering.py
@@ -20,6 +21,7 @@ python scripts/test_analysis_output_rendering.py
 python scripts/test_safe_debug_output_rendering.py
 python scripts/test_explore_output_rendering.py
 python scripts/test_explore_variant_matrix.py
+python scripts/test_research_explore_dry_run.py
 python scripts/test_setup_planning.py
 python scripts/test_orchestrator_dry_run.py
 python scripts/test_training_lane_routing.py
@@ -28,6 +30,7 @@ python scripts/test_training_lane_routing.py
 3. If installation behavior changed, also run:
 
 ```bash
+python scripts/install_skills.py --client agents --target ./tmp/agents-skills --force
 python scripts/install_skills.py --client codex --target ./tmp/codex-skills --force
 python scripts/install_skills.py --client claude --target ./tmp/claude-skills --force
 ```
@@ -39,10 +42,13 @@ python scripts/install_skills.py --client claude --target ./tmp/claude-skills --
 - Keep every skill folder named exactly after its front matter `name`.
 - Register every public or helper skill in `references/skill-registry.json`.
 - Keep `SKILL.md` focused on boundaries and workflow.
+- Treat `SKILL.md` as the canonical cross-client skill contract.
 - Put detailed policy in `references/`.
 - Put reusable writers and shared helpers in `shared/`.
 - Keep helper skills narrow.
 - Preserve trusted-lane defaults unless the change intentionally introduces or updates an explore-lane capability.
+- Do not make skill behavior depend on client-specific metadata such as `agents/openai.yaml`.
+- Keep `.claude/commands/` wrappers aligned with the corresponding skill boundaries and entrypoints.
 
 ## Lane rules
 
@@ -65,7 +71,7 @@ python scripts/install_skills.py --client claude --target ./tmp/claude-skills --
 - `python scripts/test_trigger_boundaries.py` passes
 - `python scripts/test_readme_selection.py` passes
 - all lane-specific rendering tests pass
-- installer and bootstrapper checks pass for both Codex and Claude Code entrypoints
+- installer and bootstrapper checks pass for neutral Agent Skills, Codex, and Claude Code entrypoints
 - orchestrator dry-run still reflects the intended trusted chain
 - helper/public/explore metadata still matches the actual boundaries
 - output contract changes are intentional and documented
