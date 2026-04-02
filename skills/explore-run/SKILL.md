@@ -25,6 +25,20 @@ description: Explore-lane experimental execution skill for deep learning researc
 - It should keep experiment state isolated from the trusted baseline.
 - It should prefer small-subset and short-cycle checks before heavier exploratory runs.
 
+## Ranking Semantics
+
+- Pre-execution candidate selection uses three factors: `cost`, `success_rate`, and `expected_gain`.
+- Default weights should stay conservative unless the researcher explicitly provides `selection_weights`.
+- Budget pruning still applies after scoring through `max_variants` and `max_short_cycle_runs`.
+- If runs are executed later, downstream ranking should switch to real execution evidence, not stay purely heuristic.
+
+## Variant Spec Hints
+
+- Use `variant_axes` to define the candidate dimension grid.
+- Use `subset_sizes` and `short_run_steps` to express exploratory run scale.
+- Use `selection_weights` to rebalance `cost`, `success_rate`, and `expected_gain`.
+- Use `primary_metric` and `metric_goal` so downstream ranking can order executed candidates consistently.
+
 ## Output expectations
 
 - `explore_outputs/CHANGESET.md`
@@ -33,4 +47,4 @@ description: Explore-lane experimental execution skill for deep learning researc
 
 ## Notes
 
-Use `references/execution-policy.md`, `scripts/plan_variants.py`, and `scripts/write_outputs.py`.
+Use `references/execution-policy.md`, `../../references/explore-variant-spec.md`, `scripts/plan_variants.py`, and `scripts/write_outputs.py`.

@@ -124,6 +124,7 @@
       "required_files": [
         "SKILL.md",
         "references/reporting-policy.md",
+        "scripts/run_command.py",
         "scripts/write_outputs.py"
       ],
       "output_mode": {
@@ -211,6 +212,7 @@
       "required_files": [
         "SKILL.md",
         "references/explore-policy.md",
+        "scripts/plan_code_changes.py",
         "scripts/write_outputs.py"
       ],
       "output_mode": {

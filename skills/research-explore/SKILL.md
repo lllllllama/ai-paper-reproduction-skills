@@ -12,9 +12,23 @@ description: Explore-lane end-to-end orchestrator for deep learning research rep
 - Use `analyze-project` only when insertion points, entrypoints, or config relationships are still unclear.
 - Use `env-and-assets-bootstrap` only when the environment or assets tied to `current_research` are still unclear.
 - Use `explore-code` for bounded exploratory code adaptation.
-- Use `explore-run` for short-cycle trials, sweeps, and candidate ranking.
+- Use `explore-run` for short-cycle trials, sweeps, and pre-execution candidate ranking.
 - Let execution hand off to `minimal-run-and-audit` or `run-train` only when the exploratory plan needs real command execution.
 - Write candidate-only outputs to `explore_outputs/`; never present the result as trusted reproduction success.
+
+## Ranking Semantics
+
+- Before execution, exploratory candidates should be prioritized with three factors: `cost`, `success_rate`, and `expected_gain`.
+- Prefer using `selection_weights` in the variant spec when the researcher wants to rebalance those three factors.
+- Keep budget limits explicit through `max_variants` and `max_short_cycle_runs`.
+- After candidates actually run, rank results by real execution evidence: `status` first, then `primary_metric` and `metric_goal` when provided.
+
+## Variant Spec Hints
+
+- Use `current_research` to anchor the exploratory context.
+- Use `variant_axes`, `subset_sizes`, and `short_run_steps` to describe the candidate matrix.
+- Use `selection_weights` to tune the pre-execution balance between `cost`, `success_rate`, and `expected_gain`.
+- Use `primary_metric` and `metric_goal` to control post-execution candidate ranking.
 
 ## Boundaries
 
@@ -25,4 +39,4 @@ description: Explore-lane end-to-end orchestrator for deep learning research rep
 
 ## Notes
 
-Use `references/research-explore-policy.md`, `scripts/orchestrate_explore.py`, and `scripts/write_outputs.py`.
+Use `references/research-explore-policy.md`, `../../references/explore-variant-spec.md`, `scripts/orchestrate_explore.py`, and `scripts/write_outputs.py`.

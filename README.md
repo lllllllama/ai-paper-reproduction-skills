@@ -238,6 +238,46 @@ Training is intentionally conservative in the trusted lane.
 
 The explore lane must not claim trusted reproduction success.
 
+### 📈 Exploratory candidate ranking
+
+Before execution, `explore-run` now ranks candidates with three factors instead of cost alone:
+
+- `cost`: cheaper candidates are preferred
+- `success_rate`: candidates that are more likely to run cleanly are preferred
+- `expected_gain`: candidates that are more likely to produce a measurable improvement are preferred
+
+Default pre-execution weights are:
+
+- `cost = 0.25`
+- `success_rate = 0.35`
+- `expected_gain = 0.40`
+
+Budget is still enforced through `max_variants` and `max_short_cycle_runs`. After candidates actually run, `research-explore` switches to real execution evidence and ranks results by `status` plus `primary_metric` / `metric_goal` when provided.
+
+Minimal variant-spec example:
+
+```json
+{
+  "current_research": "improved-model@branch",
+  "base_command": "python train.py --config configs/demo.yaml",
+  "variant_axes": {
+    "adapter": ["none", "lora"],
+    "lr": ["1e-4", "5e-5"]
+  },
+  "subset_sizes": [128, 512],
+  "short_run_steps": [100, 300],
+  "max_variants": 4,
+  "max_short_cycle_runs": 2,
+  "selection_weights": {
+    "cost": 0.25,
+    "success_rate": 0.35,
+    "expected_gain": 0.40
+  },
+  "primary_metric": "val_acc",
+  "metric_goal": "maximize"
+}
+```
+
 ## 📁 Output Directories
 
 | Directory | Purpose |
@@ -343,6 +383,8 @@ GitHub Actions validates this repository on `ubuntu-latest`, `macos-latest`, and
 ## 📚 References
 
 - Skill registry: [references/skill-registry.json](references/skill-registry.json)
+- Explore variant spec: [references/explore-variant-spec.md](references/explore-variant-spec.md)
+- Explore module roadmap: [references/explore-module-roadmap.md](references/explore-module-roadmap.md)
 - Client compatibility policy: [references/client-compatibility-policy.md](references/client-compatibility-policy.md)
 - Routing policy: [references/routing-policy.md](references/routing-policy.md)
 - Trigger boundary policy: [references/trigger-boundary-policy.md](references/trigger-boundary-policy.md)

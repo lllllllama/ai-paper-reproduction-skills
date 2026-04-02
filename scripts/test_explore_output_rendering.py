@@ -19,7 +19,17 @@ def assert_contains(text: str, needle: str, label: str) -> None:
 def write_context(path: Path, mode: str) -> None:
     context = {
         "schema_version": "1.0",
+        "context_id": "research-explore-demo",
         "status": "planned" if mode in {"code", "research"} else "completed",
+        "explore_context": {
+            "context_id": "research-explore-demo",
+            "current_research": "main@abc1234",
+            "experiment_branch": "exp/lora-demo",
+            "explicit_explore_authorization": True,
+            "isolated_workspace": True,
+            "workspace_mode": "branch",
+            "workspace_root": "D:/demo/repo",
+        },
         "current_research": "main@abc1234",
         "experiment_branch": "exp/lora-demo",
         "isolated_workspace": True,
@@ -27,8 +37,42 @@ def write_context(path: Path, mode: str) -> None:
             {"repo": "org/source-repo", "ref": "deadbeef", "note": "adapter block source"}
         ],
         "variant_count": 3,
+        "raw_variant_count": 5,
+        "pruned_variant_count": 2,
+        "variant_budget": {
+            "max_variants": 3,
+            "max_short_cycle_runs": 1,
+        },
+        "selection_policy": {
+            "factors": ["cost", "success_rate", "expected_gain"],
+            "weights": {
+                "cost": 0.25,
+                "success_rate": 0.35,
+                "expected_gain": 0.4,
+            },
+        },
+        "metric_policy": {
+            "primary_metric": "val_loss",
+            "metric_goal": "minimize",
+        },
         "best_runs": [
-            {"id": "variant-001", "metric": "0.812", "summary": "LoRA rank 8 on subset A"}
+            {
+                "id": "variant-001",
+                "metric": 0.812,
+                "metric_name": "val_loss",
+                "ranking_metric_name": "val_loss",
+                "summary": "LoRA rank 8 on subset A",
+            }
+        ],
+        "candidate_edit_targets": ["model.py", "configs/demo.yaml"],
+        "code_tracks": ["Review adapter and head touchpoints before widening edits."],
+        "helper_stage_trace": [
+            {
+                "stage": "workspace",
+                "tool": "research-explore/ensure_experiment_workspace",
+                "status": "completed",
+                "summary": "Created isolated experiment branch `exp/lora-demo`.",
+            }
         ],
         "recommended_next_trials": [
             "Promote the best exploratory branch into a supervised rerun if metrics remain stable."
@@ -74,6 +118,8 @@ def main() -> int:
             assert_contains(changeset, "exp/lora-demo", f"{mode}/CHANGESET.md")
             assert_contains(top_runs, "# Top Runs", f"{mode}/TOP_RUNS.md")
             assert_contains(top_runs, "variant-001", f"{mode}/TOP_RUNS.md")
+            assert_contains(top_runs, "val_loss", f"{mode}/TOP_RUNS.md")
+            assert_contains(top_runs, "cost, success_rate, expected_gain", f"{mode}/TOP_RUNS.md")
 
             if status["experiment_branch"] != "exp/lora-demo":
                 raise AssertionError("explore status lost experiment_branch")
@@ -81,13 +127,27 @@ def main() -> int:
                 raise AssertionError("explore status lost current_research")
             if status["baseline_ref"] != "main@abc1234":
                 raise AssertionError("explore status lost compatibility baseline_ref")
+            if status["explore_context"]["experiment_branch"] != "exp/lora-demo":
+                raise AssertionError("explore status lost canonical explore_context")
             if status["explicit_explore_authorization"] is not True:
                 raise AssertionError("explore status lost explicit authorization flag")
             if status["variant_count"] != 3:
                 raise AssertionError("explore status lost variant_count")
+            if status["raw_variant_count"] != 5:
+                raise AssertionError("explore status lost raw_variant_count")
+            if status["pruned_variant_count"] != 2:
+                raise AssertionError("explore status lost pruned_variant_count")
+            if status["metric_policy"]["primary_metric"] != "val_loss":
+                raise AssertionError("explore status lost metric_policy")
+            if status["variant_budget"]["max_variants"] != 3:
+                raise AssertionError("explore status lost variant_budget")
+            if status["selection_policy"]["factors"] != ["cost", "success_rate", "expected_gain"]:
+                raise AssertionError("explore status lost selection_policy")
+            if not status["helper_stage_trace"]:
+                raise AssertionError("explore status lost helper stage trace")
 
         print("ok: True")
-        print("checks: 15")
+        print("checks: 26")
         print("failures: 0")
         return 0
     finally:

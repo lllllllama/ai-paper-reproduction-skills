@@ -64,10 +64,14 @@ def parse_progress(text: str) -> Dict[str, Any]:
     }
 
 
+def split_command(command: str) -> List[str]:
+    return shlex.split(command, posix=True)
+
+
 def execute_command(repo: Path, command: str, timeout: int) -> Tuple[Dict[str, Any], str]:
     try:
         result = subprocess.run(
-            shlex.split(command, posix=False),
+            split_command(command),
             cwd=repo,
             capture_output=True,
             text=True,

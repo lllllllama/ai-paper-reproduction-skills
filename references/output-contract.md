@@ -31,7 +31,11 @@ Expected directories include:
 Explore output traits:
 
 - `current_research` recorded as the exploratory anchor
-- variant counts and best runs summarized
+- canonical `explore_context` recorded with `current_research`, `experiment_branch`, and explicit authorization
+- helper stage trace recorded for the orchestration path that produced the bundle
+- raw/pruned variant counts, budget caps, and best runs summarized
+- pre-execution selection policy recorded when exploratory candidates are ranked before execution
+- metric policy for candidate ranking recorded when explicit exploratory ranking is configured
 - source references for transplanted or adapted modules recorded
 - enough context for a human to decide whether to continue
 - no implicit claim that exploratory gains are trusted baselines

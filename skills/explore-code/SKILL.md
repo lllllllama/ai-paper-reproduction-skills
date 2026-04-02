@@ -33,4 +33,4 @@ description: Explore-lane code adaptation skill for deep learning research repos
 
 ## Notes
 
-Use `references/explore-policy.md` and `scripts/write_outputs.py`.
+Use `references/explore-policy.md`, `scripts/plan_code_changes.py`, and `scripts/write_outputs.py`.

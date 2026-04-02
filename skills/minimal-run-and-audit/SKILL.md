@@ -44,4 +44,4 @@ description: Trusted-lane execution and reporting skill for README-first AI repo
 
 ## Notes
 
-Use `references/reporting-policy.md` and `scripts/write_outputs.py`.
+Use `references/reporting-policy.md`, `scripts/run_command.py`, and `scripts/write_outputs.py`.
