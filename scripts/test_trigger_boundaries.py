@@ -109,6 +109,12 @@ def contains_any(text: str, phrases: Iterable[str]) -> bool:
     return any(phrase in text for phrase in phrases)
 
 
+def contains_term(text: str, term: str) -> bool:
+    if re.fullmatch(r"[a-z0-9_-]+", term):
+        return re.search(rf"\b{re.escape(term)}\b", text) is not None
+    return term in text
+
+
 def repo_context(text: str) -> bool:
     return contains_any(
         text,
@@ -255,12 +261,17 @@ def explore_authorization(text: str) -> bool:
 
 
 def explore_code_intent(text: str) -> bool:
-    return contains_any(
-        text,
-        [
+    return any(
+        contains_term(
+            text,
+            phrase,
+        )
+        for phrase in [
             "lora",
             "adapter",
             "transplant module",
+            "transplant a module",
+            "transplanting a module",
             "copy the module",
             "copy a module",
             "replace the head",
@@ -269,7 +280,7 @@ def explore_code_intent(text: str) -> bool:
             "module combination",
             "stitch together",
             "smallest adaptation",
-        ],
+        ]
     )
 
 
@@ -288,6 +299,45 @@ def explore_run_intent(text: str) -> bool:
             "quick transfer-learning",
             "rank candidate runs",
             "exploratory runs",
+        ],
+    )
+
+
+def current_research_context(text: str) -> bool:
+    return contains_any(
+        text,
+        [
+            "current_research",
+            "current research",
+            "current model",
+            "current checkpoint",
+            "current run",
+            "current branch",
+            "already reproduced",
+            "already improved",
+            "already trained",
+            "on top of this model",
+            "on top of the current research",
+            "branch off from this run",
+            "use this improved model",
+            "use this checkpoint",
+        ],
+    )
+
+
+def research_explore_intent(text: str) -> bool:
+    return contains_any(
+        text,
+        [
+            "research-explore",
+            "orchestrate exploration",
+            "coordinate code and run",
+            "coordinate exploratory code and run",
+            "end-to-end exploration",
+            "end to end exploration",
+            "code and run changes together",
+            "candidate heads and training variants",
+            "rank candidates",
         ],
     )
 
@@ -444,6 +494,10 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
     has_explore_auth = explore_authorization(prompt_text)
     wants_explore_code = explore_code_intent(prompt_text)
     wants_explore_run = explore_run_intent(prompt_text)
+    has_current_research = current_research_context(prompt_text)
+    wants_research_explore = research_explore_intent(prompt_text) or (
+        has_current_research and wants_explore_code and wants_explore_run
+    )
     wants_paper_gap = paper_gap_intent(prompt_text)
     wants_summary = paper_summary_intent(prompt_text)
     wants_analysis = analysis_intent(prompt_text)
@@ -529,6 +583,8 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
             return 0.0
         if not (has_explore_auth and wants_explore_code):
             return 0.0
+        if wants_research_explore and wants_explore_run:
+            return 0.0
         if wants_train and not wants_explore_code:
             base_score -= 2.0
         return base_score + 5.0
@@ -538,7 +594,24 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
             return 0.0
         if not (has_explore_auth and wants_explore_run):
             return 0.0
+        if wants_research_explore and wants_explore_code:
+            return 0.0
         return base_score + 5.0
+
+    if skill_name == "research-explore":
+        if has_error or wants_debug:
+            return 0.0
+        if not has_explore_auth:
+            return 0.0
+        if not (has_current_research or wants_research_explore):
+            return 0.0
+        if not (wants_research_explore or (wants_explore_code and wants_explore_run)):
+            return 0.0
+        if wants_explore_code and not wants_explore_run and not wants_research_explore:
+            return 0.0
+        if wants_explore_run and not wants_explore_code and not wants_research_explore:
+            return 0.0
+        return base_score + 6.0
 
     if skill_name == "paper-context-resolver":
         if wants_summary:

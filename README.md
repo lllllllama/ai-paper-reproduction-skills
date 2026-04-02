@@ -21,6 +21,7 @@ The skill directories follow the `SKILL.md` open format, so the same repository 
 - Trusted training startup verification and recorded training execution
 - Safe debugging for research repositories
 - Explicitly authorized exploratory code and run work
+- End-to-end exploratory orchestration on top of `current_research`
 
 **What this repository is not for**
 
@@ -54,8 +55,9 @@ flowchart TD
     C --> C5[run-train]
     C --> C6[safe-debug]
 
-    D --> D1[explore-code]
-    D --> D2[explore-run]
+    D --> D1[research-explore]
+    D --> D2[explore-code]
+    D --> D3[explore-run]
 
     C1 -. helper .-> H1[repo-intake-and-plan]
     C1 -. helper .-> H2[paper-context-resolver]
@@ -108,6 +110,7 @@ Claude Code can auto-invoke these skills when the descriptions match, or you can
 | Trusted | 🔍 `analyze-project` | Read-only project analysis, model mapping, and risk surfacing |
 | Trusted | 🧪 `run-train` | Training startup verification, resume handling, bounded monitoring, and training records |
 | Trusted | 🩺 `safe-debug` | Research-safe debugging: analyze first, patch only after approval |
+| Explore | `research-explore` | End-to-end exploratory orchestration on top of `current_research` |
 | Explore | 🧬 `explore-code` | Exploratory code adaptation, transplant, and stitching on isolated branches |
 | Explore | 📈 `explore-run` | Small-subset probes, short-cycle trials, and ranked exploratory runs |
 | Helper | 🗂️ `repo-intake-and-plan` | Narrow helper for repo scanning and README command extraction |
@@ -161,7 +164,8 @@ Training is intentionally conservative in trusted reproduction.
 
 Exploration must be explicit.
 
-- `explore-code` and `explore-run` are never the default route.
+- `research-explore`, `explore-code`, and `explore-run` are never the default route.
+- `research-explore` is the end-to-end explore orchestrator when the task spans both `current_research` coordination and exploratory code-plus-run work.
 - In the explore lane, training does not stop at the trusted-lane confirmation checkpoint.
 - Exploratory results are candidates only and must not be presented as trusted reproduction success.
 
@@ -204,6 +208,10 @@ Use safe-debug on this traceback. Diagnose the failure first, propose the smalle
 **Explicit exploration**
 
 ```text
+Use research-explore on top of current_research improved-model@branch. Work on an isolated branch, coordinate code and run exploration together, try several variants, and rank candidates in explore_outputs/.
+```
+
+```text
 Use explore-code on an isolated branch. Try a LoRA adaptation for this backbone, keep it exploratory only, and summarize the changes in explore_outputs/.
 ```
 
@@ -228,6 +236,7 @@ python scripts/test_analysis_output_rendering.py
 python scripts/test_safe_debug_output_rendering.py
 python scripts/test_explore_output_rendering.py
 python scripts/test_explore_variant_matrix.py
+python scripts/test_research_explore_dry_run.py
 python scripts/test_setup_planning.py
 python scripts/test_orchestrator_dry_run.py
 python scripts/test_training_lane_routing.py

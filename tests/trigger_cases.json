@@ -55,7 +55,7 @@
       "prompt": "On an isolated branch, explore adding LoRA to this backbone with the smallest adaptation. It is okay to commit exploratory modifications directly to the experiment branch and write explore_outputs.",
       "expected_any": ["explore-code"],
       "expected_top": "explore-code",
-      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "run-train", "paper-context-resolver", "analyze-project", "safe-debug"]
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "run-train", "paper-context-resolver", "analyze-project", "safe-debug", "research-explore"]
     },
     {
       "id": "explore_code_module_transplant_en",
@@ -63,7 +63,7 @@
       "prompt": "Use an isolated worktree to transplant a module from another paper repo, keep the change as a candidate only, and record the exploratory changeset.",
       "expected_any": ["explore-code"],
       "expected_top": "explore-code",
-      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "run-train", "paper-context-resolver", "analyze-project", "safe-debug"]
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "run-train", "paper-context-resolver", "analyze-project", "safe-debug", "research-explore"]
     },
     {
       "id": "explore_run_sweep_en",
@@ -71,7 +71,7 @@
       "prompt": "Use idle GPU on an experiment branch to run a batch sweep with a small subset and short-cycle guess-and-check trials, then rank the top runs in explore_outputs.",
       "expected_any": ["explore-run"],
       "expected_top": "explore-run",
-      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "run-train", "paper-context-resolver", "analyze-project", "safe-debug"]
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "run-train", "paper-context-resolver", "analyze-project", "safe-debug", "research-explore"]
     },
     {
       "id": "explore_run_transfer_trial_en",
@@ -79,7 +79,15 @@
       "prompt": "Explore quick transfer-learning runs on an isolated branch with a small subset first, then rank candidate runs and recommend next trials.",
       "expected_any": ["explore-run"],
       "expected_top": "explore-run",
-      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "run-train", "paper-context-resolver", "analyze-project", "safe-debug"]
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "run-train", "paper-context-resolver", "analyze-project", "safe-debug", "research-explore"]
+    },
+    {
+      "id": "research_explore_end_to_end_en",
+      "type": "positive",
+      "prompt": "On top of current_research improved-branch@abc123, use an isolated branch to coordinate exploratory code and run changes together, try several adapter variants, do short-cycle checks, and rank candidates in explore_outputs.",
+      "expected_any": ["research-explore"],
+      "expected_top": "research-explore",
+      "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "run-train", "paper-context-resolver", "analyze-project", "safe-debug", "explore-code", "explore-run"]
     },
     {
       "id": "paper_gap_only_en",
@@ -191,7 +199,7 @@
       "prompt": "On an isolated branch, explore adapter insertion for this backbone and keep the output as a candidate only. Do not treat it as the trusted baseline.",
       "expected_any": ["explore-code"],
       "expected_top": "explore-code",
-      "forbidden": ["run-train", "minimal-run-and-audit", "safe-debug", "analyze-project"]
+      "forbidden": ["run-train", "minimal-run-and-audit", "safe-debug", "analyze-project", "research-explore"]
     },
     {
       "id": "boundary_explore_run_vs_trusted",
@@ -199,7 +207,23 @@
       "prompt": "Use idle GPU to explore a small-subset short-cycle sweep on an experiment branch and rank candidate runs; this is not the trusted baseline.",
       "expected_any": ["explore-run"],
       "expected_top": "explore-run",
-      "forbidden": ["run-train", "minimal-run-and-audit", "safe-debug", "analyze-project"]
+      "forbidden": ["run-train", "minimal-run-and-audit", "safe-debug", "analyze-project", "research-explore"]
+    },
+    {
+      "id": "boundary_research_explore_vs_code",
+      "type": "boundary",
+      "prompt": "Use current_research improved-branch@abc123 on an isolated branch to explore a transplant module change only and summarize the code changes as a candidate only.",
+      "expected_any": ["explore-code"],
+      "expected_top": "explore-code",
+      "forbidden": ["research-explore", "explore-run", "run-train", "minimal-run-and-audit", "safe-debug", "analyze-project"]
+    },
+    {
+      "id": "boundary_research_explore_vs_run",
+      "type": "boundary",
+      "prompt": "Use current_research checkpoint best.pt to explore a small-subset short-cycle sweep only and rank top runs as candidate-only exploratory runs.",
+      "expected_any": ["explore-run"],
+      "expected_top": "explore-run",
+      "forbidden": ["research-explore", "explore-code", "run-train", "minimal-run-and-audit", "safe-debug", "analyze-project"]
     },
     {
       "id": "boundary_paper_vs_summary",

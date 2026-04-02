@@ -1,17 +1,21 @@
 # Trigger Boundary Policy
 
-This repository depends on clear trigger boundaries because the main skill and sub-skills operate on the same domain.
+This repository depends on clear trigger boundaries because multiple orchestrators and narrower skills operate on the same domain.
 
 ## Main rule
 
-The main skill should trigger only for end-to-end README-first AI repo reproduction requests.
+`ai-paper-reproduction` should trigger only for end-to-end README-first AI repo reproduction requests.
 
-Sub-skills should trigger only for explicitly narrower requests:
+`research-explore` should trigger only for explicit end-to-end exploration on top of `current_research`.
+
+Narrower skills should trigger only for explicitly narrower requests:
 
 - repo intake and planning
 - environment and asset preparation
 - minimal execution and audit
 - narrow paper-context recovery
+- code-only exploration
+- run-only exploration
 
 ## Design rule for front matter descriptions
 
@@ -24,8 +28,11 @@ This matters because the front matter is the strongest pre-trigger signal.
 
 ## Mis-trigger risks to control
 
-- main skill firing on simple repo scan requests
-- main skill firing on generic paper summary requests
+- `ai-paper-reproduction` firing on simple repo scan requests
+- `ai-paper-reproduction` firing on generic paper summary requests
+- `research-explore` firing on narrow code-only exploration
+- `research-explore` firing on narrow run-only exploration
+- `research-explore` firing on ambiguous "improve this" prompts without explicit exploratory authorization
 - `repo-intake-and-plan` firing on environment-only requests
 - `env-and-assets-bootstrap` firing on repo scan prompts
 - `minimal-run-and-audit` firing before a target command exists

@@ -19,8 +19,8 @@ def assert_contains(text: str, needle: str, label: str) -> None:
 def write_context(path: Path, mode: str) -> None:
     context = {
         "schema_version": "1.0",
-        "status": "planned" if mode == "code" else "completed",
-        "baseline_ref": "main@abc1234",
+        "status": "planned" if mode in {"code", "research"} else "completed",
+        "current_research": "main@abc1234",
         "experiment_branch": "exp/lora-demo",
         "isolated_workspace": True,
         "source_repo_refs": [
@@ -49,10 +49,11 @@ def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
     code_writer = repo_root / "skills" / "explore-code" / "scripts" / "write_outputs.py"
     run_writer = repo_root / "skills" / "explore-run" / "scripts" / "write_outputs.py"
+    research_writer = repo_root / "skills" / "research-explore" / "scripts" / "write_outputs.py"
 
     temp_root = Path(tempfile.mkdtemp(prefix="codex-explore-render-", dir=repo_root))
     try:
-        for mode, writer in [("code", code_writer), ("run", run_writer)]:
+        for mode, writer in [("code", code_writer), ("run", run_writer), ("research", research_writer)]:
             context_path = temp_root / f"{mode}.json"
             output_dir = temp_root / mode / "explore_outputs"
             output_dir.parent.mkdir(parents=True, exist_ok=True)
@@ -76,13 +77,17 @@ def main() -> int:
 
             if status["experiment_branch"] != "exp/lora-demo":
                 raise AssertionError("explore status lost experiment_branch")
+            if status["current_research"] != "main@abc1234":
+                raise AssertionError("explore status lost current_research")
+            if status["baseline_ref"] != "main@abc1234":
+                raise AssertionError("explore status lost compatibility baseline_ref")
             if status["explicit_explore_authorization"] is not True:
                 raise AssertionError("explore status lost explicit authorization flag")
             if status["variant_count"] != 3:
                 raise AssertionError("explore status lost variant_count")
 
         print("ok: True")
-        print("checks: 10")
+        print("checks: 15")
         print("failures: 0")
         return 0
     finally:

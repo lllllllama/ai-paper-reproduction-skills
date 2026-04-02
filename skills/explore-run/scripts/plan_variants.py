@@ -14,12 +14,17 @@ def load_spec(path: Path) -> Dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
+def current_research_value(spec: Dict[str, Any]) -> str:
+    return str(spec.get("current_research") or spec.get("baseline_ref") or "unknown")
+
+
 def build_variants(spec: Dict[str, Any]) -> Dict[str, Any]:
     axes = spec.get("variant_axes", {})
     keys = sorted(axes)
     values = [axes[key] for key in keys]
     subset_sizes = spec.get("subset_sizes", [None])
     short_run_steps = spec.get("short_run_steps", [None])
+    current_research = current_research_value(spec)
 
     variants: List[Dict[str, Any]] = []
     index = 1
@@ -34,7 +39,8 @@ def build_variants(spec: Dict[str, Any]) -> Dict[str, Any]:
                         "axes": axis_values,
                         "subset_size": subset_size,
                         "short_run_steps": step_limit,
-                        "baseline_ref": spec.get("baseline_ref"),
+                        "current_research": current_research,
+                        "baseline_ref": spec.get("baseline_ref", current_research),
                         "base_command": spec.get("base_command"),
                     }
                 )
@@ -42,7 +48,9 @@ def build_variants(spec: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         "schema_version": "1.0",
-        "baseline_ref": spec.get("baseline_ref"),
+        "current_research": current_research,
+        "baseline_ref": spec.get("baseline_ref", current_research),
+        "base_command": spec.get("base_command"),
         "variant_count": len(variants),
         "variants": variants,
     }

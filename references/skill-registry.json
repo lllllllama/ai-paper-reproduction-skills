@@ -171,6 +171,39 @@
       }
     },
     {
+      "name": "research-explore",
+      "tier": "public",
+      "lane": "explore",
+      "compat": {
+        "preserve_name": true,
+        "aliases": []
+      },
+      "can_call": [
+        "analyze-project",
+        "env-and-assets-bootstrap",
+        "explore-code",
+        "explore-run",
+        "minimal-run-and-audit",
+        "run-train"
+      ],
+      "required_files": [
+        "SKILL.md",
+        "references/research-explore-policy.md",
+        "agents/openai.yaml",
+        "scripts/orchestrate_explore.py",
+        "scripts/write_outputs.py"
+      ],
+      "output_mode": {
+        "kind": "explore",
+        "primary_dir": "explore_outputs",
+        "artifacts": [
+          "CHANGESET.md",
+          "TOP_RUNS.md",
+          "status.json"
+        ]
+      }
+    },
+    {
       "name": "explore-code",
       "tier": "public",
       "lane": "explore",

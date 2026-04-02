@@ -30,6 +30,7 @@ Expected directories include:
 
 Explore output traits:
 
+- `current_research` recorded as the exploratory anchor
 - variant counts and best runs summarized
 - source references for transplanted or adapted modules recorded
 - enough context for a human to decide whether to continue

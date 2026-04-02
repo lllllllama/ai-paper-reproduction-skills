@@ -1,6 +1,6 @@
 ---
 name: explore-run
-description: Explore-lane experimental execution skill for deep learning research repositories. Use when the researcher explicitly authorizes exploratory runs such as small-subset validation, short-cycle guess-and-check, batch sweeps, idle-GPU search, or quick transfer-learning trials, with results summarized in `explore_outputs/`. Do not use for trusted baseline execution, conservative training verification, default routing, or implicit experimentation.
+description: Explore-lane experimental execution skill for deep learning research repositories. Use when the researcher explicitly authorizes exploratory runs such as small-subset validation, short-cycle guess-and-check, batch sweeps, idle-GPU search, or quick transfer-learning trials, with results summarized in `explore_outputs/`. Do not use for end-to-end exploration orchestration on top of `current_research`, trusted baseline execution, conservative training verification, default routing, or implicit experimentation.
 ---
 
 # explore-run
@@ -20,6 +20,7 @@ description: Explore-lane experimental execution skill for deep learning researc
 ## Clear boundaries
 
 - This skill owns exploratory execution planning and summary only.
+- Use `research-explore` instead when the task spans both current_research coordination and exploratory code changes.
 - It may hand off actual command execution to `minimal-run-and-audit` or `run-train`.
 - It should keep experiment state isolated from the trusted baseline.
 - It should prefer small-subset and short-cycle checks before heavier exploratory runs.

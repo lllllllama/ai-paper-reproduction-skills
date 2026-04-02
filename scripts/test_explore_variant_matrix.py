@@ -18,7 +18,7 @@ def main() -> int:
     temp_root = Path(tempfile.mkdtemp(prefix="codex-explore-matrix-", dir=repo_root))
     try:
         spec = {
-            "baseline_ref": "main@abc1234",
+            "current_research": "main@abc1234",
             "base_command": "python train.py --config configs/demo.yaml",
             "variant_axes": {
                 "adapter": ["none", "lora"],
@@ -41,15 +41,21 @@ def main() -> int:
         payload = json.loads(out_path.read_text(encoding="utf-8"))
         if payload["variant_count"] != 8:
             raise AssertionError("unexpected variant_count in exploratory matrix")
+        if payload["current_research"] != "main@abc1234":
+            raise AssertionError("current_research was not preserved")
+        if payload["baseline_ref"] != "main@abc1234":
+            raise AssertionError("baseline_ref compatibility alias was not preserved")
         if payload["variants"][0]["subset_size"] != 128:
             raise AssertionError("subset size was not preserved")
         if payload["variants"][0]["short_run_steps"] not in {100, 200}:
             raise AssertionError("short-run step was not preserved")
         if sorted(payload["variants"][0]["axes"]) != ["adapter", "lr"]:
             raise AssertionError("variant axes were not preserved")
+        if payload["variants"][0]["current_research"] != "main@abc1234":
+            raise AssertionError("variant current_research was not propagated")
 
         print("ok: True")
-        print("checks: 4")
+        print("checks: 7")
         print("failures: 0")
         return 0
     finally:

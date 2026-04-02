@@ -40,6 +40,15 @@ jobs:
       - name: Test output rendering
         run: python scripts/test_output_rendering.py
 
+      - name: Test explore output rendering
+        run: python scripts/test_explore_output_rendering.py
+
+      - name: Test explore variant matrix
+        run: python scripts/test_explore_variant_matrix.py
+
+      - name: Test research explore dry-run
+        run: python scripts/test_research_explore_dry_run.py
+
       - name: Test Codex installer
         run: python scripts/install_skills.py --client codex --target ./tmp/codex-skills --force
 

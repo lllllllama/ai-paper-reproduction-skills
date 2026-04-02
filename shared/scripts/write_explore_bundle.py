@@ -33,14 +33,23 @@ def format_source_refs(source_repo_refs: Iterable[Dict[str, Any]]) -> List[str]:
     return refs or ["- None."]
 
 
+def current_research_value(context: Dict[str, Any]) -> str:
+    return str(context.get("current_research") or context.get("baseline_ref") or "unknown")
+
+
 def write_changeset(output_dir: Path, context: Dict[str, Any], mode: str) -> None:
     title = "# Explore Changeset"
-    intent_title = "## Exploratory code focus" if mode == "code" else "## Experiment focus"
+    if mode == "code":
+        intent_title = "## Exploratory code focus"
+    elif mode == "run":
+        intent_title = "## Experiment focus"
+    else:
+        intent_title = "## Research exploration focus"
     lines = [
         title,
         "",
         f"- Mode: `{mode}`",
-        f"- Baseline ref: `{context.get('baseline_ref', 'unknown')}`",
+        f"- Current research: `{current_research_value(context)}`",
         f"- Experiment branch: `{context.get('experiment_branch', 'unknown')}`",
         f"- Isolated workspace: `{context.get('isolated_workspace', True)}`",
         f"- Trusted promotion candidate: `{context.get('trusted_promote_candidate', False)}`",
@@ -66,6 +75,11 @@ def write_top_runs(output_dir: Path, context: Dict[str, Any], mode: str) -> None
         "# Top Runs",
         "",
         f"- Variant count: `{context.get('variant_count', 0)}`",
+        f"- Current research: `{current_research_value(context)}`",
+        "",
+        "## Candidate hypotheses",
+        "",
+        bullets(context.get("candidate_hypotheses", [])),
         "",
         "## Best runs",
         "",
@@ -87,7 +101,7 @@ def write_top_runs(output_dir: Path, context: Dict[str, Any], mode: str) -> None
             "",
         ]
     )
-    if mode == "run":
+    if mode in {"run", "research"}:
         lines.extend(
             [
                 "## Execution notes",
@@ -100,17 +114,22 @@ def write_top_runs(output_dir: Path, context: Dict[str, Any], mode: str) -> None
 
 
 def write_status(output_dir: Path, context: Dict[str, Any], mode: str) -> None:
+    current_research = current_research_value(context)
     payload = {
         "schema_version": context.get("schema_version", "1.0"),
         "mode": mode,
         "status": context.get("status", "planned"),
-        "baseline_ref": context.get("baseline_ref"),
+        "current_research": current_research,
+        "baseline_ref": context.get("baseline_ref", current_research),
         "experiment_branch": context.get("experiment_branch"),
         "isolated_workspace": context.get("isolated_workspace", True),
         "source_repo_refs": context.get("source_repo_refs", []),
         "variant_count": context.get("variant_count", 0),
         "best_runs": context.get("best_runs", []),
+        "candidate_hypotheses": context.get("candidate_hypotheses", []),
+        "planned_skill_chain": context.get("planned_skill_chain", []),
         "recommended_next_trials": context.get("recommended_next_trials", []),
+        "execution_notes": context.get("execution_notes", []),
         "trusted_promote_candidate": context.get("trusted_promote_candidate", False),
         "explicit_explore_authorization": context.get("explicit_explore_authorization", True),
         "outputs": {
@@ -133,7 +152,7 @@ def write_bundle(mode: str, output_dir: Path, context: Dict[str, Any]) -> None:
 def main(default_mode: str = "code", default_output_dir: Optional[str] = None) -> int:
     parser = argparse.ArgumentParser(description="Write exploratory output bundles.")
     parser.add_argument("--context-json", required=True, help="Path to a context JSON file.")
-    parser.add_argument("--mode", choices=["code", "run"], default=default_mode)
+    parser.add_argument("--mode", choices=["code", "run", "research"], default=default_mode)
     parser.add_argument(
         "--output-dir",
         default=default_output_dir or "explore_outputs",

@@ -7,7 +7,7 @@ Use this skill only when exploratory code changes have been explicitly authorize
 ## Requirements
 
 - keep work on an isolated branch or worktree
-- record baseline ref and experiment branch
+- record `current_research` and experiment branch
 - record source repository references when transplanting modules
 - prefer the smallest viable adaptation over broad rewrites
 - treat results as exploratory candidates, not trusted conclusions
@@ -17,3 +17,4 @@ Use this skill only when exploratory code changes have been explicitly authorize
 - modifying the trusted baseline by default
 - claiming reproduction success from exploratory changes
 - freeform large-scale refactors
+- using this skill as the end-to-end `current_research` explore orchestrator

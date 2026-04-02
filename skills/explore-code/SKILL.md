@@ -1,6 +1,6 @@
 ---
 name: explore-code
-description: Explore-lane code adaptation skill for deep learning research repositories. Use when the researcher explicitly authorizes exploratory work on an isolated branch or worktree to transplant modules, adapt a backbone, add LoRA or adapter layers, replace a head, or stitch together low-risk migration ideas with summary-only records in `explore_outputs/`. Do not use for trusted baseline reproduction, conservative debugging, environment setup, or default repository analysis.
+description: Explore-lane code adaptation skill for deep learning research repositories. Use when the researcher explicitly authorizes exploratory work on an isolated branch or worktree to transplant modules, adapt a backbone, add LoRA or adapter layers, replace a head, or stitch together low-risk migration ideas with summary-only records in `explore_outputs/`. Do not use for end-to-end exploration orchestration on top of `current_research`, trusted baseline reproduction, conservative debugging, environment setup, or default repository analysis.
 ---
 
 # explore-code
@@ -21,6 +21,7 @@ description: Explore-lane code adaptation skill for deep learning research repos
 
 - This skill owns exploratory code modifications only.
 - It must keep work isolated from the trusted baseline.
+- Use `research-explore` instead when the task spans both current_research coordination and exploratory runs.
 - It may hand off execution to `minimal-run-and-audit` or `run-train`.
 - It should favor source-anchored copying and minimal adaptation over freeform rewrites.
 

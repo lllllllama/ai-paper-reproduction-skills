@@ -8,7 +8,7 @@ Use this skill only when exploratory execution has been explicitly authorized.
 
 - keep experiment runs isolated from the trusted baseline
 - prefer small-subset or short-cycle checks before heavier exploratory runs
-- record baseline ref, experiment branch, variant count, and top runs
+- record `current_research`, experiment branch, variant count, and top runs
 - summarize candidates for human review instead of claiming trusted success
 
 ## Avoid
@@ -16,3 +16,4 @@ Use this skill only when exploratory execution has been explicitly authorized.
 - default or implicit exploration
 - rewriting training logic inside this skill
 - promoting exploratory results into the trusted lane automatically
+- using this skill as the end-to-end `current_research` explore orchestrator

@@ -39,6 +39,7 @@ Traits:
 
 Explore-lane skills are for:
 
+- end-to-end exploratory work on top of `current_research`
 - broad-sweep experiments
 - low-cost speculative variants
 - isolated branch or worktree modifications
@@ -47,6 +48,7 @@ Explore-lane skills are for:
 
 Current explore public skills:
 
+- `research-explore`
 - `explore-code`
 - `explore-run`
 
@@ -59,6 +61,9 @@ Explore-lane requests should usually contain signals such as:
 - "broad search"
 - "explore"
 - "try several variants"
+- "current_research"
+- "on top of the current research"
+- "coordinate code and run exploration"
 
 ## Helper lane
 
@@ -79,5 +84,5 @@ Current helper skills:
 
 - Trusted skills must not auto-route into exploration.
 - Exploration must not silently claim trusted reproduction success.
-- Same-level skills should not call each other directly.
-- End-to-end orchestration should happen only through the public orchestrator skill.
+- Peer leaf skills should not call each other directly.
+- End-to-end orchestration should happen through the public orchestrator skill for the relevant task family.
