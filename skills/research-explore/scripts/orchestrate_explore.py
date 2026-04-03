@@ -14,6 +14,15 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from passes import (
+    run_execution_feasibility_pass,
+    run_idea_card_pass,
+    run_idea_ranking_pass,
+    run_improvement_bank_pass,
+    run_lookup_pass,
+    run_source_mapping_pass,
+)
+
 
 DURABLE_ANCHOR_HASH_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
 EXTERNAL_REFERENCE_PREFIXES = ("run:", "checkpoint:", "branch:", "commit:", "model:", "state:")
@@ -480,6 +489,10 @@ def normalize_campaign(args: argparse.Namespace) -> Tuple[Dict[str, Any], bool]:
         "variant_spec": variant_spec,
         "baseline_gate": normalize_baseline_gate(raw_campaign.get("baseline_gate", {}), metric_goal),
         "execution_policy": execution_policy,
+        "research_lookup": dict(raw_campaign.get("research_lookup", {})) if isinstance(raw_campaign.get("research_lookup"), dict) else {},
+        "idea_policy": dict(raw_campaign.get("idea_policy", {})) if isinstance(raw_campaign.get("idea_policy"), dict) else {},
+        "source_constraints": dict(raw_campaign.get("source_constraints", {})) if isinstance(raw_campaign.get("source_constraints"), dict) else {},
+        "feasibility_policy": dict(raw_campaign.get("feasibility_policy", {})) if isinstance(raw_campaign.get("feasibility_policy"), dict) else {},
     }
     return campaign, compatibility_mode
 
@@ -789,6 +802,58 @@ def run_analysis_pass(
             context_path.unlink()
 
 
+def run_code_plan_pass(
+    *,
+    code_planner_script: Path,
+    workspace_repo_path: Path,
+    current_research: str,
+    experiment_branch: str,
+    task_family: str,
+    variant_spec: Dict[str, Any],
+    selected_idea: Optional[Dict[str, Any]] = None,
+    analysis_data: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    temp_paths: List[Path] = []
+    args = [
+        "--repo",
+        str(workspace_repo_path),
+        "--current-research",
+        current_research,
+        "--experiment-branch",
+        experiment_branch,
+        "--task-family",
+        task_family,
+        "--json",
+    ]
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".json", delete=False) as handle:
+        variant_spec_path = Path(handle.name)
+        handle.write(json.dumps(variant_spec, indent=2, ensure_ascii=False))
+    temp_paths.append(variant_spec_path)
+    args.extend(["--variant-spec-json", str(variant_spec_path)])
+
+    if selected_idea:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".json", delete=False) as handle:
+            idea_card_path = Path(handle.name)
+            handle.write(json.dumps(selected_idea, indent=2, ensure_ascii=False))
+        temp_paths.append(idea_card_path)
+        args.extend(["--idea-card-json", str(idea_card_path)])
+
+    if analysis_data:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".json", delete=False) as handle:
+            analysis_path = Path(handle.name)
+            handle.write(json.dumps(analysis_data, indent=2, ensure_ascii=False))
+        temp_paths.append(analysis_path)
+        args.extend(["--analysis-json", str(analysis_path)])
+
+    try:
+        return run_json(code_planner_script, args)
+    finally:
+        for path in temp_paths:
+            if path.exists():
+                path.unlink()
+
+
 def best_sota_reference(sota_reference: Sequence[Dict[str, Any]], metric_policy: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     primary_metric = metric_policy.get("primary_metric")
     metric_goal = normalize_metric_goal(metric_policy.get("metric_goal"))
@@ -1013,6 +1078,43 @@ def build_config_diff_summary(selected_idea: Optional[Dict[str, Any]], variant_m
     return lines
 
 
+def feasibility_score(short_run_feasibility: str) -> float:
+    if short_run_feasibility == "proceed":
+        return 1.0
+    if short_run_feasibility == "borderline":
+        return 0.5
+    return 0.0
+
+
+def enrich_cards_with_feasibility(
+    cards: Sequence[Dict[str, Any]],
+    feasibility_bundle: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    short_run_feasibility = str(feasibility_bundle.get("feasibility", {}).get("short_run_feasibility") or "plausible")
+    score = feasibility_score(short_run_feasibility)
+    enriched: List[Dict[str, Any]] = []
+    for item in cards:
+        card = dict(item)
+        card["short_run_feasibility"] = short_run_feasibility
+        card["execution_feasibility_score"] = score
+        enriched.append(card)
+    return enriched
+
+
+def merge_selected_idea_with_source_mapping(
+    selected_idea: Optional[Dict[str, Any]],
+    source_mapping: Dict[str, Any],
+) -> Optional[Dict[str, Any]]:
+    if selected_idea is None:
+        return None
+    merged = dict(selected_idea)
+    merged["requested_patch_class"] = source_mapping.get("requested_patch_class") or str(merged.get("patch_class") or "")
+    merged["patch_class"] = source_mapping.get("resolved_patch_class") or str(merged.get("patch_class") or "config-only")
+    merged["patch_class_source"] = source_mapping.get("patch_class_source") or ("campaign" if merged.get("patch_class") else "default")
+    merged["requires_source_triple"] = bool(source_mapping.get("requires_source_triple"))
+    return merged
+
+
 def build_experiment_manifest(
     *,
     current_research: str,
@@ -1022,21 +1124,68 @@ def build_experiment_manifest(
     metric_policy: Dict[str, Any],
     analysis_output_dir: Path,
     variant_matrix: Dict[str, Any],
+    source_mapping: Optional[Dict[str, Any]] = None,
+    feasibility_bundle: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    idea = selected_idea or synthesize_candidate_idea(campaign["variant_spec"])
+    mapping = source_mapping or {}
+    if selected_idea is None:
+        return {
+            "status": "blocked",
+            "parent_baseline": current_research,
+            "idea_id": None,
+            "hypothesis": "",
+            "changed_files": [],
+            "config_overrides": {},
+            "dataset": campaign.get("dataset"),
+            "eval_contract_ref": str((analysis_output_dir / "EVAL_CONTRACT.md").as_posix()),
+            "improvement_bank_ref": str((analysis_output_dir / "IMPROVEMENT_BANK.md").as_posix()),
+            "idea_cards_ref": str((analysis_output_dir / "IDEA_CARDS.json").as_posix()),
+            "idea_scores_ref": str((analysis_output_dir / "IDEA_SCORES.json").as_posix()),
+            "module_candidates_ref": str((analysis_output_dir / "MODULE_CANDIDATES.md").as_posix()),
+            "interface_diff_ref": str((analysis_output_dir / "INTERFACE_DIFF.md").as_posix()),
+            "resource_plan_ref": str((analysis_output_dir / "RESOURCE_PLAN.md").as_posix()),
+            "primary_metric": metric_policy.get("primary_metric"),
+            "seed_policy": "inherit-baseline-seeds",
+            "budget": campaign.get("compute_budget", {}),
+            "promotion_rule": "No promotion; experiment manifest is blocked until one idea passes the idea gate.",
+            "supporting_changes": mapping.get("supporting_changes", []),
+            "selected_source_reference": [],
+            "selected_source_record": mapping.get("selected_source_record", {}),
+            "target_location_map": mapping.get("target_location_map", []),
+            "minimal_patch_plan": mapping.get("minimal_patch_plan", []),
+            "smoke_validation_plan": mapping.get("smoke_plan", []),
+            "feasibility_summary": (feasibility_bundle or {}).get("feasibility", {}),
+            "blockers": ["no-selected-idea"],
+        }
+    idea = selected_idea
+    manifest_blockers = list(mapping.get("source_blockers", [])) if mapping.get("requires_source_triple") else []
     return {
+        "status": "blocked" if manifest_blockers else "ready",
         "parent_baseline": current_research,
         "idea_id": idea.get("id"),
         "hypothesis": idea.get("hypothesis") or idea.get("summary"),
-        "changed_files": code_plan.get("candidate_edit_targets", [])[:3],
+        "changed_files": [item.get("file") for item in mapping.get("target_location_map", [])[:3]],
         "config_overrides": variant_matrix.get("variants", [{}])[0].get("axes", {}) if variant_matrix.get("variants") else {},
         "dataset": campaign.get("dataset"),
         "eval_contract_ref": str((analysis_output_dir / "EVAL_CONTRACT.md").as_posix()),
+        "improvement_bank_ref": str((analysis_output_dir / "IMPROVEMENT_BANK.md").as_posix()),
+        "idea_cards_ref": str((analysis_output_dir / "IDEA_CARDS.json").as_posix()),
+        "idea_scores_ref": str((analysis_output_dir / "IDEA_SCORES.json").as_posix()),
+        "module_candidates_ref": str((analysis_output_dir / "MODULE_CANDIDATES.md").as_posix()),
+        "interface_diff_ref": str((analysis_output_dir / "INTERFACE_DIFF.md").as_posix()),
+        "resource_plan_ref": str((analysis_output_dir / "RESOURCE_PLAN.md").as_posix()),
         "primary_metric": metric_policy.get("primary_metric"),
         "seed_policy": "inherit-baseline-seeds",
         "budget": campaign.get("compute_budget", {}),
         "promotion_rule": "Promote only if the candidate improves the primary metric and exceeds the provided SOTA reference under the frozen evaluation contract.",
-        "supporting_changes": idea.get("supporting_changes", []),
+        "supporting_changes": mapping.get("supporting_changes", []) or idea.get("supporting_changes", []),
+        "selected_source_reference": idea.get("source_reference", []),
+        "selected_source_record": mapping.get("selected_source_record", {}),
+        "target_location_map": mapping.get("target_location_map", []),
+        "minimal_patch_plan": mapping.get("minimal_patch_plan", []),
+        "smoke_validation_plan": mapping.get("smoke_plan", []),
+        "feasibility_summary": (feasibility_bundle or {}).get("feasibility", {}),
+        "blockers": manifest_blockers,
     }
 
 
@@ -1302,6 +1451,98 @@ def compute_sota_claim_state(
     return "not-applicable"
 
 
+def write_analysis_status(
+    *,
+    analysis_output_dir: Path,
+    analysis_data: Dict[str, Any],
+    lookup_bundle: Dict[str, Any],
+    improvement_bank: Dict[str, Any],
+    idea_cards: Dict[str, Any],
+    idea_gate: Dict[str, Any],
+    selected_idea: Optional[Dict[str, Any]],
+    source_mapping: Dict[str, Any],
+    feasibility_bundle: Dict[str, Any],
+) -> Path:
+    outputs = {
+        "summary": "analysis_outputs/SUMMARY.md",
+        "risks": "analysis_outputs/RISKS.md",
+        "research_map": "analysis_outputs/RESEARCH_MAP.md",
+        "change_map": "analysis_outputs/CHANGE_MAP.md",
+        "eval_contract": "analysis_outputs/EVAL_CONTRACT.md",
+        "source_inventory": "analysis_outputs/SOURCE_INVENTORY.md",
+        "source_support": "analysis_outputs/SOURCE_SUPPORT.json",
+        "improvement_bank": "analysis_outputs/IMPROVEMENT_BANK.md",
+        "idea_cards": "analysis_outputs/IDEA_CARDS.json",
+        "idea_evaluation": "analysis_outputs/IDEA_EVALUATION.md",
+        "idea_scores": "analysis_outputs/IDEA_SCORES.json",
+        "module_candidates": "analysis_outputs/MODULE_CANDIDATES.md",
+        "interface_diff": "analysis_outputs/INTERFACE_DIFF.md",
+        "resource_plan": "analysis_outputs/RESOURCE_PLAN.md",
+    }
+    existing_outputs = {
+        key: rel
+        for key, rel in outputs.items()
+        if (analysis_output_dir / Path(rel).name).exists()
+    }
+    payload = {
+        "schema_version": "1.0",
+        "status": "analyzed",
+        "repo": analysis_data.get("repo"),
+        "task_family": analysis_data.get("task_family"),
+        "entrypoints": analysis_data.get("entrypoints", {}),
+        "task_relevant_files": analysis_data.get("task_relevant_files", []),
+        "research_map": analysis_data.get("research_map", {}),
+        "change_map": analysis_data.get("change_map", {}),
+        "eval_contract": analysis_data.get("eval_contract", {}),
+        "symbol_hints": analysis_data.get("symbol_hints", []),
+        "constructor_candidates": analysis_data.get("constructor_candidates", []),
+        "forward_candidates": analysis_data.get("forward_candidates", []),
+        "config_binding_hints": analysis_data.get("config_binding_hints", []),
+        "module_files": analysis_data.get("module_files", []),
+        "metric_files": analysis_data.get("metric_files", []),
+        "lookup_records": [
+            {
+                "source_id": item.get("source_id"),
+                "source_type": item.get("source_type") or item.get("kind"),
+                "title": item.get("title"),
+                "artifact_path": item.get("artifact_path"),
+                "provider_type": item.get("provider_type"),
+                "locator_type": item.get("locator_type"),
+                "normalized_id": item.get("normalized_id"),
+                "url": item.get("url") or item.get("source_url"),
+                "evidence_class": item.get("evidence_class"),
+                "evidence_weight": item.get("evidence_weight"),
+                "parse_status": item.get("parse_status"),
+                "source_repo": item.get("source_repo"),
+                "source_file": item.get("source_file"),
+                "source_symbol": item.get("source_symbol"),
+            }
+            for item in lookup_bundle.get("records", [])
+        ],
+        "source_inventory": {
+            "artifact_path": lookup_bundle.get("inventory_path"),
+            "support_path": lookup_bundle.get("support_path"),
+            "records_by_evidence_class": lookup_bundle.get("records_by_evidence_class", []),
+            "repo_extracted_locators": lookup_bundle.get("repo_extracted_locators", []),
+        },
+        "idea_cards": idea_cards.get("cards", []),
+        "idea_gate": idea_gate,
+        "selected_idea": selected_idea,
+        "module_candidates": source_mapping.get("module_candidates", []),
+        "selected_source_record": source_mapping.get("selected_source_record", {}),
+        "interface_diff": source_mapping.get("interface_diff", {}),
+        "minimal_patch_plan": source_mapping.get("minimal_patch_plan", []),
+        "resource_plan": feasibility_bundle.get("feasibility", {}),
+        "outputs": {
+            **existing_outputs,
+            "status": "analysis_outputs/status.json",
+        },
+    }
+    path = analysis_output_dir / "status.json"
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
 def build_context(
     *,
     repo_path: Path,
@@ -1315,7 +1556,13 @@ def build_context(
     scan_data: Dict[str, Any],
     setup_plan: Dict[str, Any],
     analysis_data: Dict[str, Any],
+    analysis_status_path: Optional[Path],
+    lookup_bundle: Dict[str, Any],
+    improvement_bank: Dict[str, Any],
+    idea_cards: Dict[str, Any],
     code_plan: Dict[str, Any],
+    source_mapping: Dict[str, Any],
+    feasibility_bundle: Dict[str, Any],
     variant_matrix: Dict[str, Any],
     metric_policy: Dict[str, Any],
     executed_runs: List[Dict[str, Any]],
@@ -1359,6 +1606,26 @@ def build_context(
         "campaign": campaign,
         "eval_contract": eval_contract,
         "analysis_output_dir": str(analysis_output_dir),
+        "analysis_artifacts": {
+            "analysis_status": str(analysis_status_path) if analysis_status_path else str((analysis_output_dir / "status.json")),
+            "source_inventory": str((analysis_output_dir / "SOURCE_INVENTORY.md")),
+            "source_support": str((analysis_output_dir / "SOURCE_SUPPORT.json")),
+            "improvement_bank": str((analysis_output_dir / "IMPROVEMENT_BANK.md")),
+            "idea_cards": str((analysis_output_dir / "IDEA_CARDS.json")),
+            "idea_evaluation": str((analysis_output_dir / "IDEA_EVALUATION.md")),
+            "idea_scores": str((analysis_output_dir / "IDEA_SCORES.json")),
+            "module_candidates": str((analysis_output_dir / "MODULE_CANDIDATES.md")),
+            "interface_diff": str((analysis_output_dir / "INTERFACE_DIFF.md")),
+            "resource_plan": str((analysis_output_dir / "RESOURCE_PLAN.md")),
+        },
+        "sources_dir": lookup_bundle.get("sources_dir"),
+        "sources_records_dir": lookup_bundle.get("records_dir"),
+        "sources_index_path": lookup_bundle.get("index_path"),
+        "source_inventory_path": lookup_bundle.get("inventory_path"),
+        "source_support_path": lookup_bundle.get("support_path"),
+        "source_record_count": len(lookup_bundle.get("records", [])),
+        "source_records_by_evidence_class": lookup_bundle.get("records_by_evidence_class", []),
+        "lookup_records": lookup_bundle.get("records", []),
         "source_repo_refs": code_plan.get("source_repo_refs") or [{"repo": repo_path.name, "ref": current_research, "note": "current_research anchor"}],
         "raw_variant_count": variant_matrix.get("raw_variant_count", variant_matrix.get("variant_count", 0)),
         "variant_count": variant_matrix.get("variant_count", 0),
@@ -1369,14 +1636,30 @@ def build_context(
         "baseline_gate": baseline_gate,
         "idea_gate": idea_gate,
         "selected_idea": selected_idea,
+        "idea_cards": idea_cards.get("cards", []),
+        "improvement_bank": improvement_bank.get("items", []),
         "experiment_manifest": experiment_manifest,
         "experiment_ledger": experiment_ledger,
         "short_run_gate": short_run_gate_payload,
         "best_runs": executed_runs,
         "candidate_edit_targets": code_plan.get("candidate_edit_targets", []),
+        "selected_source_record": source_mapping.get("selected_source_record", {}),
+        "target_location_map": source_mapping.get("target_location_map", []),
+        "supporting_changes": source_mapping.get("supporting_changes", []),
+        "patch_surface_summary": source_mapping.get("patch_surface_summary", {}),
+        "minimal_patch_plan": source_mapping.get("minimal_patch_plan", []),
+        "smoke_validation_plan": source_mapping.get("smoke_plan", []),
+        "module_candidates": source_mapping.get("module_candidates", []),
+        "interface_diff": source_mapping.get("interface_diff", {}),
         "code_tracks": code_plan.get("proposed_code_tracks", []),
         "config_diff_summary": config_diff_summary,
         "candidate_hypotheses": build_candidate_hypotheses(campaign, analysis_data, code_plan, idea_gate),
+        "resource_plan": feasibility_bundle.get("feasibility", {}),
+        "resource_detection": feasibility_bundle.get("resources", {}),
+        "resource_recommendations": feasibility_bundle.get("recommendations", {}),
+        "static_smoke": feasibility_bundle.get("static_smoke", {}),
+        "runtime_smoke": feasibility_bundle.get("runtime_smoke", {}),
+        "smoke_report": feasibility_bundle.get("smoke_report", {}),
         "planned_skill_chain": planned_skill_chain,
         "helper_stage_trace": helper_stage_trace,
         "recommended_next_trials": build_recommended_next_trials(
@@ -1452,6 +1735,8 @@ def main() -> int:
     repo_path = Path(args.repo).resolve()
     output_dir = Path(args.output_dir).resolve()
     analysis_output_dir = output_dir.parent / "analysis_outputs"
+    analysis_output_dir.mkdir(parents=True, exist_ok=True)
+    sources_dir = output_dir.parent / "sources"
 
     campaign, compatibility_mode = normalize_campaign(args)
     current_research = campaign["current_research"]
@@ -1496,11 +1781,16 @@ def main() -> int:
         analysis_data = run_analysis_pass(analysis_script, workspace_repo_path, analysis_output_dir, analysis_context)
         helper_stage_trace.append(build_stage_trace_entry("analysis-pass", "analyze-project/scripts/analyze_project.py", "Ran a task-aware read-only analysis pass and wrote analysis_outputs artifacts."))
 
-    code_plan_args = ["--repo", str(workspace_repo_path), "--current-research", current_research, "--experiment-branch", experiment_branch, "--task-family", campaign.get("task_family") or "", "--json"]
-    if args.variant_spec_json:
-        code_plan_args.extend(["--variant-spec-json", args.variant_spec_json])
-    code_plan = run_json(code_planner_script, code_plan_args)
-    helper_stage_trace.append(build_stage_trace_entry("code-plan", "explore-code/scripts/plan_code_changes.py", f"Prepared {len(code_plan.get('candidate_edit_targets', []))} candidate edit targets."))
+    initial_code_plan = run_code_plan_pass(
+        code_planner_script=code_planner_script,
+        workspace_repo_path=workspace_repo_path,
+        current_research=current_research,
+        experiment_branch=experiment_branch,
+        task_family=campaign.get("task_family") or "",
+        variant_spec=variant_spec,
+        analysis_data=analysis_data or None,
+    )
+    helper_stage_trace.append(build_stage_trace_entry("code-plan-seed", "explore-code/scripts/plan_code_changes.py", f"Prepared {len(initial_code_plan.get('candidate_edit_targets', []))} seed edit targets."))
     helper_stage_trace.append(build_stage_trace_entry("run-plan", "explore-run/scripts/plan_variants.py", f"Prepared {variant_matrix.get('variant_count', 0)} exploratory run variants after pruning {variant_matrix.get('pruned_variant_count', 0)} by budget."))
 
     eval_contract = eval_contract_payload(analysis_data, campaign, metric_policy)
@@ -1524,9 +1814,104 @@ def main() -> int:
         )
         helper_stage_trace.append(build_stage_trace_entry("baseline-gate", "research-explore/run_baseline_gate", f"Baseline gate decision: `{baseline_gate.get('decision', 'not-applicable')}`."))
 
-    idea_gate = build_idea_gate(campaign["candidate_ideas"])
+    lookup_bundle = run_lookup_pass(
+        sources_dir=sources_dir,
+        repo_path=workspace_repo_path,
+        analysis_output_dir=analysis_output_dir,
+        campaign=campaign,
+        analysis_data=analysis_data,
+        code_plan=initial_code_plan,
+    )
+    helper_stage_trace.append(build_stage_trace_entry("research-lookup", "research-explore/passes/lookup_sources.py", f"Cached {len(lookup_bundle.get('records', []))} source lookup records into `{lookup_bundle.get('sources_dir', sources_dir)}`."))
+
+    improvement_bank = run_improvement_bank_pass(
+        analysis_output_dir=analysis_output_dir,
+        campaign=campaign,
+        analysis_data=analysis_data,
+        code_plan=initial_code_plan,
+        lookup_bundle=lookup_bundle,
+        baseline_gate=baseline_gate,
+    )
+    helper_stage_trace.append(build_stage_trace_entry("improvement-bank", "research-explore/passes/improvement_bank.py", f"Built {len(improvement_bank.get('items', []))} bounded improvements."))
+
+    idea_cards = run_idea_card_pass(
+        analysis_output_dir=analysis_output_dir,
+        improvement_items=improvement_bank.get("items", []),
+    )
+    helper_stage_trace.append(build_stage_trace_entry("hypothesis-cards", "research-explore/passes/idea_cards.py", f"Materialized {len(idea_cards.get('cards', []))} hypothesis cards."))
+
+    seed_idea_gate = run_idea_ranking_pass(
+        analysis_output_dir=analysis_output_dir,
+        cards=idea_cards.get("cards", []),
+        baseline_gate=baseline_gate,
+    )
+    selected_idea = seed_idea_gate.get("selected_idea")
+    helper_stage_trace.append(build_stage_trace_entry("idea-gate-seed", "research-explore/passes/idea_ranking.py", f"Seed-ranked {len(seed_idea_gate.get('ranked_ideas', []))} idea cards and selected `{(selected_idea or {}).get('id', 'none')}`."))
+
+    if selected_idea is not None:
+        code_plan = run_code_plan_pass(
+            code_planner_script=code_planner_script,
+            workspace_repo_path=workspace_repo_path,
+            current_research=current_research,
+            experiment_branch=experiment_branch,
+            task_family=campaign.get("task_family") or "",
+            variant_spec=variant_spec,
+            selected_idea=selected_idea,
+            analysis_data=analysis_data or None,
+        )
+        helper_stage_trace.append(build_stage_trace_entry("code-plan", "explore-code/scripts/plan_code_changes.py", f"Prepared {len(code_plan.get('candidate_edit_targets', []))} candidate edit targets for the selected idea."))
+
+        source_mapping = run_source_mapping_pass(
+            analysis_output_dir=analysis_output_dir,
+            selected_idea=selected_idea,
+            analysis_data=analysis_data,
+            code_plan=code_plan,
+            lookup_bundle=lookup_bundle,
+            variant_matrix=variant_matrix,
+        )
+        selected_idea = merge_selected_idea_with_source_mapping(selected_idea, source_mapping)
+        helper_stage_trace.append(build_stage_trace_entry("source-mapping", "research-explore/passes/source_mapping.py", f"Mapped {len(source_mapping.get('target_location_map', []))} target locations and {len(source_mapping.get('module_candidates', []))} module candidates."))
+    else:
+        code_plan = initial_code_plan
+        source_mapping = {
+            "schema_version": "1.0",
+            "artifact_paths": [],
+            "selected_source_record": {},
+            "transplant_ready": False,
+            "source_blockers": [],
+            "target_location_map": [],
+            "supporting_changes": code_plan.get("supporting_changes", []),
+            "patch_surface_summary": code_plan.get("patch_surface_summary", {}),
+            "module_candidates": [],
+            "interface_diff": {},
+            "minimal_patch_plan": [],
+            "smoke_plan": [],
+            "requested_patch_class": "",
+            "resolved_patch_class": "config-only",
+            "patch_class_source": "source-mapping",
+            "requires_source_triple": False,
+        }
+        helper_stage_trace.append(build_stage_trace_entry("source-mapping", "research-explore/passes/source_mapping.py", "Skipped source mapping because no idea passed the idea gate.", status="blocked"))
+
+    feasibility_bundle = run_execution_feasibility_pass(
+        analysis_output_dir=analysis_output_dir,
+        repo_path=workspace_repo_path,
+        campaign=campaign,
+        analysis_data=analysis_data,
+        variant_matrix=variant_matrix,
+        source_mapping=source_mapping,
+        executed_runs=[],
+    )
+    helper_stage_trace.append(build_stage_trace_entry("execution-feasibility", "research-explore/passes/execution_feasibility.py", f"Short-run feasibility: `{feasibility_bundle.get('feasibility', {}).get('short_run_feasibility', 'unknown')}`."))
+
+    idea_cards["cards"] = enrich_cards_with_feasibility(idea_cards.get("cards", []), feasibility_bundle)
+    idea_gate = run_idea_ranking_pass(
+        analysis_output_dir=analysis_output_dir,
+        cards=idea_cards.get("cards", []),
+        baseline_gate=baseline_gate,
+    )
     selected_idea = idea_gate.get("selected_idea")
-    helper_stage_trace.append(build_stage_trace_entry("idea-gate", "research-explore/idea_gate", f"Ranked {len(idea_gate.get('ranked_ideas', []))} candidate ideas and selected `{(selected_idea or {}).get('id', 'none')}`."))
+    helper_stage_trace.append(build_stage_trace_entry("idea-gate", "research-explore/passes/idea_ranking.py", f"Re-ranked {len(idea_gate.get('ranked_ideas', []))} idea cards after feasibility injection and selected `{(selected_idea or {}).get('id', 'none')}`."))
 
     checkpoint_state, checkpoint_reasons = human_checkpoint_state(
         compatibility_mode=compatibility_mode,
@@ -1534,6 +1919,45 @@ def main() -> int:
         baseline_gate=baseline_gate,
         idea_gate=idea_gate,
     )
+    if not compatibility_mode and selected_idea is None:
+        checkpoint_reasons = [*checkpoint_reasons, "no-selected-idea"]
+        checkpoint_state = "no-selected-idea" if len(checkpoint_reasons) == 1 else "multiple-reasons"
+
+    if selected_idea is not None:
+        code_plan = run_code_plan_pass(
+            code_planner_script=code_planner_script,
+            workspace_repo_path=workspace_repo_path,
+            current_research=current_research,
+            experiment_branch=experiment_branch,
+            task_family=campaign.get("task_family") or "",
+            variant_spec=variant_spec,
+            selected_idea=selected_idea,
+            analysis_data=analysis_data or None,
+        )
+        helper_stage_trace.append(build_stage_trace_entry("code-plan-final", "explore-code/scripts/plan_code_changes.py", f"Refreshed {len(code_plan.get('candidate_edit_targets', []))} candidate edit targets after final idea selection."))
+
+        source_mapping = run_source_mapping_pass(
+            analysis_output_dir=analysis_output_dir,
+            selected_idea=selected_idea,
+            analysis_data=analysis_data,
+            code_plan=code_plan,
+            lookup_bundle=lookup_bundle,
+            variant_matrix=variant_matrix,
+        )
+        selected_idea = merge_selected_idea_with_source_mapping(selected_idea, source_mapping)
+        idea_gate["selected_idea"] = selected_idea
+        helper_stage_trace.append(build_stage_trace_entry("source-mapping-final", "research-explore/passes/source_mapping.py", f"Canonical source mapping uses {len(source_mapping.get('target_location_map', []))} target locations and transplant_ready=`{source_mapping.get('transplant_ready', False)}`."))
+
+    if not compatibility_mode and feasibility_bundle.get("feasibility", {}).get("short_run_feasibility") == "blocked":
+        checkpoint_reasons = [*checkpoint_reasons, "short-run-feasibility-blocked"]
+        checkpoint_state = (
+            "short-run-feasibility-blocked"
+            if len(checkpoint_reasons) == 1
+            else "multiple-reasons"
+        )
+    if not compatibility_mode and selected_idea is not None and source_mapping.get("requires_source_triple") and source_mapping.get("source_blockers"):
+        checkpoint_reasons = [*checkpoint_reasons, *source_mapping.get("source_blockers", [])]
+        checkpoint_state = source_mapping["source_blockers"][0] if len(checkpoint_reasons) == 1 else "multiple-reasons"
 
     experiment_manifest = build_experiment_manifest(
         current_research=current_research,
@@ -1543,6 +1967,8 @@ def main() -> int:
         metric_policy=metric_policy,
         analysis_output_dir=analysis_output_dir,
         variant_matrix=variant_matrix,
+        source_mapping=source_mapping,
+        feasibility_bundle=feasibility_bundle,
     )
     config_diff_summary = build_config_diff_summary(selected_idea, variant_matrix)
 
@@ -1579,7 +2005,23 @@ def main() -> int:
         short_run_runtime_seconds = round(time.perf_counter() - started, 3)
         helper_stage_trace.extend(execution_trace)
 
+    feasibility_bundle = run_execution_feasibility_pass(
+        analysis_output_dir=analysis_output_dir,
+        repo_path=workspace_repo_path,
+        campaign=campaign,
+        analysis_data=analysis_data,
+        variant_matrix=variant_matrix,
+        source_mapping=source_mapping,
+        executed_runs=executed_runs,
+    )
+    helper_stage_trace.append(build_stage_trace_entry("smoke-validation", "research-explore/passes/execution_feasibility.py", f"Smoke report status: `{feasibility_bundle.get('smoke_report', {}).get('status', 'unknown')}`."))
+
     short_run_gate_payload = short_run_gate(executed_runs, eval_contract_complete(eval_contract), selected_idea)
+    if short_run_gate_payload["status"] != "failed" and feasibility_bundle.get("feasibility", {}).get("short_run_feasibility") == "blocked":
+        short_run_gate_payload = {
+            "status": "failed",
+            "reason": "Execution feasibility blocked the short-run path before broader candidate execution.",
+        }
     helper_stage_trace.append(build_stage_trace_entry("short-run-gate", "research-explore/short_run_gate", f"Short-run gate status: `{short_run_gate_payload['status']}`."))
     if campaign["execution_policy"].get("run_full_after_short_run"):
         helper_stage_trace.append(build_stage_trace_entry("full-run", "research-explore/full_run_governor", "Full-run execution is configured but remains conservative; this implementation records the intent and stops after the short-run gate.", status="planned"))
@@ -1590,6 +2032,17 @@ def main() -> int:
         metric_policy=metric_policy,
         experiment_branch=experiment_branch,
         short_run_runtime_seconds=short_run_runtime_seconds,
+    )
+    analysis_status_path = write_analysis_status(
+        analysis_output_dir=analysis_output_dir,
+        analysis_data=analysis_data,
+        lookup_bundle=lookup_bundle,
+        improvement_bank=improvement_bank,
+        idea_cards=idea_cards,
+        idea_gate=idea_gate,
+        selected_idea=selected_idea,
+        source_mapping=source_mapping,
+        feasibility_bundle=feasibility_bundle,
     )
 
     helper_stage_trace.append(build_stage_trace_entry("bundle-write", "research-explore/scripts/write_outputs.py", f"Writing the exploratory output bundle into `{output_dir}`."))
@@ -1605,7 +2058,13 @@ def main() -> int:
         scan_data=scan_data,
         setup_plan=setup_plan,
         analysis_data=analysis_data,
+        analysis_status_path=analysis_status_path,
+        lookup_bundle=lookup_bundle,
+        improvement_bank=improvement_bank,
+        idea_cards=idea_cards,
         code_plan=code_plan,
+        source_mapping=source_mapping,
+        feasibility_bundle=feasibility_bundle,
         variant_matrix=variant_matrix,
         metric_policy=metric_policy,
         executed_runs=executed_runs,
@@ -1660,6 +2119,17 @@ def main() -> int:
         "analysis_summary": analysis_data.get("summary_lines", []),
         "analysis_suspicious_patterns": analysis_data.get("suspicious_patterns", []),
         "analysis_output_dir": str(analysis_output_dir),
+        "analysis_artifacts": context["analysis_artifacts"],
+        "sources_dir": context.get("sources_dir"),
+        "sources_index_path": context.get("sources_index_path"),
+        "lookup_record_count": len(context.get("lookup_records", [])),
+        "selected_source_record": context.get("selected_source_record", {}),
+        "target_location_map": context.get("target_location_map", []),
+        "minimal_patch_plan": context.get("minimal_patch_plan", []),
+        "static_smoke": context.get("static_smoke", {}),
+        "runtime_smoke": context.get("runtime_smoke", {}),
+        "smoke_report": context.get("smoke_report", {}),
+        "resource_plan": context.get("resource_plan", {}),
         "invoked_stage_trace": helper_stage_trace,
         "base_command": variant_matrix.get("base_command"),
         "human_checkpoint_state": checkpoint_state,

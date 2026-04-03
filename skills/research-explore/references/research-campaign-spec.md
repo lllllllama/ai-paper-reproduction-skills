@@ -94,9 +94,16 @@ Use `research_campaign.json` or `research_campaign.yaml` when `research-explore`
 - `sota_reference`
   The user-provided comparison table. `research-explore` treats this as authoritative input and does not prove completeness.
 - `candidate_ideas`
-  Candidate directions that the researcher already wants to consider.
+  Preferred but optional candidate directions that the researcher already wants to consider. If omitted, the orchestrator synthesizes one conservative single-variable seed idea from the variant spec.
 - `variant_spec`
   The run-level candidate matrix used by `explore-run`.
+
+Optional top-level fields:
+
+- `research_lookup`
+- `idea_policy`
+- `source_constraints`
+- `feasibility_policy`
 
 ## `evaluation_source`
 
@@ -118,7 +125,7 @@ This block feeds both:
 
 ## `sota_reference`
 
-Each item should contain:
+Each item should preferably contain:
 
 - `name`
 - `metric`
@@ -154,6 +161,51 @@ Optional fields:
 
 The orchestrator uses these to run the idea gate. It does not treat them as novelty claims.
 
+## Optional Policy Blocks
+
+### `research_lookup`
+
+Use this block to seed auditable lookup records without turning the orchestrator into an open-ended research agent.
+
+Supported fields:
+
+- `queries`
+- `seed_sources`
+- `enable_repo_local_extraction`
+- `optional_providers`
+
+All lookup artifacts are cached into `sources/` with stable names, `sources/records/`, and an `index.json`. Missing optional provider keys must not block this pass.
+
+### `idea_policy`
+
+Optional governance hints for idea selection. Current implementations keep hard gates fixed and treat policy hints as future-compatible metadata.
+
+Suggested fields:
+
+- `max_patch_surface`
+- `max_dependency_drag`
+- `require_source_backing`
+
+### `source_constraints`
+
+Optional hints for transplant scope.
+
+Suggested fields:
+
+- `preferred_repos`
+- `forbidden_paths`
+- `protected_zones`
+
+### `feasibility_policy`
+
+Optional hints for bounded execution.
+
+Suggested fields:
+
+- `prefer_short_run_only`
+- `require_gpu`
+- `max_short_run_hours`
+
 ## Gates
 
 ### Baseline gate
@@ -172,14 +224,30 @@ The gate can return:
 
 ### Idea gate
 
-Ideas are ranked with:
+Hard gates:
+
+- `baseline_gate != abandon`
+- `single_variable_fit >= 0.6`
+- `interface_fit >= 0.5`
+- `patch_surface <= 0.7`
+- `dependency_drag <= 0.7`
+- `eval_risk <= 0.6`
+- `short_run_feasibility != blocked`
+
+Soft ranking combines:
 
 - `expected_upside`
 - `single_variable_fit`
+- `interface_fit`
 - `rollback_ease`
+- `innovation_story_strength`
+- `source_support_strength`
 - `implementation_risk`
 - `eval_risk`
 - `estimated_runtime_cost`
+- `patch_surface`
+- `dependency_drag`
+- `baseline_distance`
 
 If the top-two ideas are too close, `research-explore` records a human checkpoint instead of silently training.
 
@@ -190,11 +258,25 @@ Campaign mode writes:
 - `analysis_outputs/RESEARCH_MAP.md`
 - `analysis_outputs/CHANGE_MAP.md`
 - `analysis_outputs/EVAL_CONTRACT.md`
+- `analysis_outputs/SOURCE_INVENTORY.md`
+- `analysis_outputs/SOURCE_SUPPORT.json`
+- `analysis_outputs/IMPROVEMENT_BANK.md`
+- `analysis_outputs/IDEA_CARDS.json`
+- `analysis_outputs/IDEA_EVALUATION.md`
+- `analysis_outputs/IDEA_SCORES.json`
+- `analysis_outputs/MODULE_CANDIDATES.md`
+- `analysis_outputs/INTERFACE_DIFF.md`
+- `analysis_outputs/RESOURCE_PLAN.md`
 - `analysis_outputs/status.json`
+- `sources/index.json`
+- `sources/SUMMARY.md`
+- `sources/records/`
 - `explore_outputs/CHANGESET.md`
 - `explore_outputs/IDEA_GATE.md`
 - `explore_outputs/EXPERIMENT_PLAN.md`
+- `explore_outputs/EXPERIMENT_MANIFEST.md`
 - `explore_outputs/EXPERIMENT_LEDGER.md`
+- `explore_outputs/TRANSPLANT_SMOKE_REPORT.md`
 - `explore_outputs/TOP_RUNS.md`
 - `explore_outputs/status.json`
 

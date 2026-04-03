@@ -162,6 +162,14 @@
       "forbidden": ["ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
     },
     {
+      "id": "open_brainstorming_negative",
+      "type": "negative",
+      "prompt": "Brainstorm open-ended novel research directions across any task, challenge my assumptions, and propose new benchmarks from scratch without a frozen current_research anchor.",
+      "expected_any": [],
+      "expected_top": null,
+      "forbidden": ["research-explore", "explore-code", "explore-run", "ai-paper-reproduction", "repo-intake-and-plan", "env-and-assets-bootstrap", "minimal-run-and-audit", "paper-context-resolver", "analyze-project", "safe-debug"]
+    },
+    {
       "id": "boundary_repo_scan_vs_main",
       "type": "boundary",
       "prompt": "Read this AI repo README and files and tell me the documented inference, eval, and train commands. Do not run anything yet.",

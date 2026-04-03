@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression checks for campaign human-checkpoint gating."""
+"""Regression checks for blocked experiment manifests when no idea passes the gate."""
 
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
     orchestrator = repo_root / "skills" / "research-explore" / "scripts" / "orchestrate_explore.py"
 
-    temp_root = Path(tempfile.mkdtemp(prefix="codex-research-campaign-checkpoint-", dir=repo_root))
+    temp_root = Path(tempfile.mkdtemp(prefix="codex-research-blocked-manifest-", dir=repo_root))
     try:
         sample_repo = temp_root / "sample_repo"
         sample_repo.mkdir()
@@ -56,48 +56,21 @@ def main() -> int:
                 "primary_metric": "miou",
                 "metric_goal": "maximize",
             },
-            "sota_reference": [
-                {"name": "Provided SOTA", "metric": "miou", "value": 80.0}
-            ],
+            "sota_reference": [{"name": "Provided SOTA", "metric": "miou", "value": 80.0}],
             "candidate_ideas": [
                 {
-                    "id": "idea-a",
-                    "summary": "Swap the lightweight adapter.",
-                    "change_scope": "adapter_a",
-                    "target_component": "decoder",
-                    "expected_upside": 0.72,
-                    "implementation_risk": 0.2,
-                    "eval_risk": 0.2,
-                    "rollback_ease": 0.85,
-                    "estimated_runtime_cost": 0.35,
-                    "single_variable_fit": 0.9,
-                },
-                {
-                    "id": "idea-b",
-                    "summary": "Swap a similar lightweight adapter.",
-                    "change_scope": "adapter_b",
-                    "target_component": "decoder",
-                    "expected_upside": 0.71,
-                    "implementation_risk": 0.2,
-                    "eval_risk": 0.2,
-                    "rollback_ease": 0.85,
-                    "estimated_runtime_cost": 0.35,
-                    "single_variable_fit": 0.9,
-                },
+                    "id": "idea-bad",
+                    "summary": "Rewrite everything.",
+                    "change_scope": "broad_rewrite",
+                    "target_component": "trainer",
+                    "expected_upside": 0.9,
+                    "implementation_risk": 0.9,
+                    "eval_risk": 0.8,
+                    "rollback_ease": 0.1,
+                    "estimated_runtime_cost": 0.9,
+                    "single_variable_fit": 0.2,
+                }
             ],
-            "research_lookup": {
-                "seed_sources": [
-                    {
-                        "kind": "repo",
-                        "title": "decoder adapter transplant",
-                        "query": "decoder adapter transplant",
-                        "url": "https://github.com/openai/gym",
-                        "repo": "openai/gym",
-                        "file": "gym/core.py",
-                        "symbol": "Env",
-                    }
-                ]
-            },
             "variant_spec": {
                 "current_research": "seg-branch@abc1234",
                 "base_command": "python train.py",
@@ -132,13 +105,19 @@ def main() -> int:
         )
 
         payload = json.loads(result.stdout)
-        if payload["human_checkpoint_state"] != "idea-selection-confirmation-required":
-            raise AssertionError("research-explore did not request a checkpoint for near-tied ideas")
+        manifest = payload["experiment_manifest"]
+        if manifest["status"] != "blocked":
+            raise AssertionError("research-explore did not block the manifest when no idea passed")
+        if "no-selected-idea" not in manifest["blockers"]:
+            raise AssertionError("research-explore lost the blocked-manifest reason")
         if payload["executed_variant_count"] != 0:
-            raise AssertionError("research-explore should not auto-train when an idea checkpoint is required")
+            raise AssertionError("research-explore should not execute variants when the manifest is blocked")
+        rendered = (output_dir / "EXPERIMENT_MANIFEST.md").read_text(encoding="utf-8")
+        if "Status: `blocked`" not in rendered:
+            raise AssertionError("rendered experiment manifest lost the blocked state")
 
         print("ok: True")
-        print("checks: 2")
+        print("checks: 4")
         print("failures: 0")
         return 0
     finally:

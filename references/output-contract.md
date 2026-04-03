@@ -27,6 +27,7 @@ Explore-lane outputs should be summary-heavy and disposable.
 Expected directories include:
 
 - `explore_outputs/`
+- `sources/`
 
 Explore output traits:
 
@@ -34,6 +35,9 @@ Explore output traits:
 - canonical `explore_context` recorded with `current_research`, `experiment_branch`, and explicit authorization
 - campaign metadata recorded when `research-explore` is used in the third scenario
 - `eval_contract`, `baseline_gate`, `idea_gate`, `selected_idea`, `experiment_manifest`, and `experiment_ledger` recorded for campaign-style runs
+- `analysis_artifacts`, `lookup_records`, `idea_cards`, `improvement_bank`, `target_location_map`, `minimal_patch_plan`, `resource_plan`, and `smoke_report` recorded when `research-explore` runs the bounded campaign pipeline
+- `source_inventory` and `source_support` recorded when `research-explore` runs the free-first research lookup pass
+- `static_smoke` and `runtime_smoke` recorded separately when the exploratory bundle includes transplant or execution checks
 - helper stage trace recorded for the orchestration path that produced the bundle
 - raw/pruned variant counts, budget caps, and best runs summarized
 - pre-execution selection policy recorded when exploratory candidates are ranked before execution
@@ -50,7 +54,9 @@ Expected `research-explore` artifacts may now include:
 - `explore_outputs/CHANGESET.md`
 - `explore_outputs/IDEA_GATE.md`
 - `explore_outputs/EXPERIMENT_PLAN.md`
+- `explore_outputs/EXPERIMENT_MANIFEST.md`
 - `explore_outputs/EXPERIMENT_LEDGER.md`
+- `explore_outputs/TRANSPLANT_SMOKE_REPORT.md`
 - `explore_outputs/TOP_RUNS.md`
 - `explore_outputs/status.json`
 
@@ -59,7 +65,24 @@ Campaign-style analysis should also emit:
 - `analysis_outputs/RESEARCH_MAP.md`
 - `analysis_outputs/CHANGE_MAP.md`
 - `analysis_outputs/EVAL_CONTRACT.md`
+- `analysis_outputs/IMPROVEMENT_BANK.md`
+- `analysis_outputs/IDEA_CARDS.json`
+- `analysis_outputs/IDEA_EVALUATION.md`
+- `analysis_outputs/IDEA_SCORES.json`
+- `analysis_outputs/MODULE_CANDIDATES.md`
+- `analysis_outputs/INTERFACE_DIFF.md`
+- `analysis_outputs/RESOURCE_PLAN.md`
 - `analysis_outputs/status.json`
+
+Research lookup should also emit cache-first, auditable records:
+
+- `sources/records/`
+- `sources/index.json`
+- `sources/SUMMARY.md`
+- `analysis_outputs/SOURCE_INVENTORY.md`
+- `analysis_outputs/SOURCE_SUPPORT.json`
+
+Current lookup is intentionally bounded and free-first: it resolves campaign seeds, repo-local extracted locators, and a small provider set such as GitHub repo URLs, arXiv IDs or URLs, DOI locators, and generic URL metadata. Optional external providers may enhance this path, but missing keys must not block `research-explore`. It is not an open-ended literature search guarantee.
 
 ## Compatibility
 

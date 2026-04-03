@@ -232,12 +232,15 @@ Training is intentionally conservative in the trusted lane.
 1. Confirm `current_research`.
 2. Create or reserve an isolated experiment branch or worktree.
 3. Produce repository-understanding artifacts in `analysis_outputs/`.
-4. Run a baseline gate against the provided evaluation command and SOTA table.
-5. Run an idea gate across the supplied candidate directions.
-6. Build a single-variable experiment manifest.
-7. Run short-cycle candidate execution, and optionally a later full run.
-8. Keep all results candidate-only.
-9. Write `explore_outputs/`.
+4. Cache research lookup records into `sources/`; current lookup is free-first, cache-first, provider-optional, repo-aware, and provider-limited rather than open-ended search.
+5. Run a baseline gate against the provided evaluation command and SOTA table.
+6. Build a bounded improvement bank and hypothesis cards.
+7. Run an idea gate across the supplied candidate directions.
+8. Build source mapping, heuristic interface diff, minimal patch planning, and execution feasibility.
+9. Build a single-variable experiment manifest.
+10. Run short-cycle candidate execution, and optionally a later full run only if feasibility and checkpoints remain clear.
+11. Keep all results candidate-only.
+12. Write `explore_outputs/`.
 
 The explore lane must not claim trusted reproduction success, global benchmark completeness, or verified novelty.
 
@@ -256,6 +259,13 @@ The campaign should freeze:
 - `compute_budget`
 - `variant_spec`
 
+Optional campaign blocks:
+
+- `research_lookup`
+- `idea_policy`
+- `source_constraints`
+- `feasibility_policy`
+
 See [skills/research-explore/references/research-campaign-spec.md](skills/research-explore/references/research-campaign-spec.md).
 
 ### 📈 Exploratory candidate ranking
@@ -273,6 +283,8 @@ Default pre-execution weights are:
 - `expected_gain = 0.40`
 
 Budget is still enforced through `max_variants` and `max_short_cycle_runs`. After candidates actually run, `research-explore` switches to real execution evidence and ranks results by `status` plus `primary_metric` / `metric_goal` when provided.
+
+For campaign-style idea ranking, `research-explore` now uses hard gates plus weighted scoring. Hard gates screen `single_variable_fit`, `interface_fit`, `patch_surface`, `dependency_drag`, `eval_risk`, and short-run feasibility. Soft scoring then prefers upside, interface fit, rollback ease, innovation story strength, and source support while penalizing implementation drag and broader patch surface.
 
 Minimal variant-spec example:
 
@@ -304,9 +316,10 @@ Minimal variant-spec example:
 |---|---|
 | `repro_outputs/` | Trusted reproduction bundle |
 | `train_outputs/` | Trusted training execution bundle |
-| `analysis_outputs/` | Read-only project analysis, research map, change map, and eval contract |
+| `analysis_outputs/` | Read-only project analysis, research map, change map, eval contract, improvement bank, idea cards, mapping, and resource plan |
 | `debug_outputs/` | Safe debug diagnosis and patch plan |
-| `explore_outputs/` | Exploratory changeset, idea gate, experiment plan, ledger, and ranked run summary |
+| `sources/` | Free-first research lookup records with `sources/records/`, stable names, bounded provider resolution, repo-local extraction, and an auditable index |
+| `explore_outputs/` | Exploratory changeset, idea gate, experiment plan, experiment manifest, split static/runtime smoke reporting, ledger, and ranked run summary |
 
 ## 💬 Example Prompts
 

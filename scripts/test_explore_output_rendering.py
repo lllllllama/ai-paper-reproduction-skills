@@ -107,6 +107,7 @@ def write_context(path: Path, mode: str) -> None:
             "summary": "Tune the adapter rank.",
             "target_component": "adapter",
             "change_scope": "rank",
+            "source_reference": ["paper:abc12345"],
         },
         "experiment_manifest": {
             "parent_baseline": "main@abc1234",
@@ -117,6 +118,20 @@ def write_context(path: Path, mode: str) -> None:
             "primary_metric": "val_loss",
             "promotion_rule": "manual-review",
             "supporting_changes": ["config plumbing"],
+            "selected_source_reference": ["paper:abc12345"],
+            "target_location_map": [
+                {"file": "model.py", "target_symbol": "AdapterBlock.__init__", "role": "code"}
+            ],
+            "minimal_patch_plan": [
+                {"change_type": "import-glue", "target_files": ["model.py"]}
+            ],
+            "smoke_validation_plan": [
+                {"name": "syntax-parse", "reason": "Keep Python parseable."}
+            ],
+            "feasibility_summary": {
+                "short_run_feasibility": "proceed",
+                "full_run_feasibility": "borderline",
+            },
         },
         "experiment_ledger": {
             "baseline": {
@@ -138,6 +153,102 @@ def write_context(path: Path, mode: str) -> None:
         "short_run_gate": {
             "status": "passed",
             "reason": "Short-run gate passed with variant-001.",
+        },
+        "analysis_artifacts": {
+            "analysis_status": "analysis_outputs/status.json",
+            "source_inventory": "analysis_outputs/SOURCE_INVENTORY.md",
+            "source_support": "analysis_outputs/SOURCE_SUPPORT.json",
+            "improvement_bank": "analysis_outputs/IMPROVEMENT_BANK.md",
+            "idea_cards": "analysis_outputs/IDEA_CARDS.json",
+            "idea_evaluation": "analysis_outputs/IDEA_EVALUATION.md",
+            "idea_scores": "analysis_outputs/IDEA_SCORES.json",
+            "module_candidates": "analysis_outputs/MODULE_CANDIDATES.md",
+            "interface_diff": "analysis_outputs/INTERFACE_DIFF.md",
+            "resource_plan": "analysis_outputs/RESOURCE_PLAN.md",
+        },
+        "sources_dir": "D:/demo/sources",
+        "sources_records_dir": "D:/demo/sources/records",
+        "sources_index_path": "D:/demo/sources/index.json",
+        "source_inventory_path": "D:/demo/analysis_outputs/SOURCE_INVENTORY.md",
+        "source_support_path": "D:/demo/analysis_outputs/SOURCE_SUPPORT.json",
+        "source_record_count": 1,
+        "source_records_by_evidence_class": ["external_provider"],
+        "lookup_records": [
+            {
+                "source_id": "paper:abc12345",
+                "source_type": "paper",
+                "title": "Adapter Paper",
+                "artifact_path": "sources/records/paper__adapter__abc12345.json",
+                "provider_type": "arxiv",
+                "evidence_class": "external_provider",
+            }
+        ],
+        "idea_cards": [
+            {"id": "idea-001", "summary": "Tune the adapter rank."}
+        ],
+        "improvement_bank": [
+            {"id": "idea-001", "summary": "Tune the adapter rank."}
+        ],
+        "target_location_map": [
+            {"file": "model.py", "target_symbol": "AdapterBlock.__init__", "role": "code"}
+        ],
+        "supporting_changes": ["config plumbing"],
+        "patch_surface_summary": {"estimated_patch_surface": "small", "target_count": 2},
+        "minimal_patch_plan": [
+            {"change_type": "import-glue", "target_files": ["model.py"]}
+        ],
+        "smoke_validation_plan": [
+            {"name": "syntax-parse", "reason": "Keep Python parseable."}
+        ],
+        "module_candidates": [
+            {"target_file": "model.py", "source_repo": "org/source-repo"}
+        ],
+        "interface_diff": {
+            "constructor_surface": ["AdapterBlock.__init__"],
+            "forward_surface": ["AdapterBlock.forward"],
+        },
+        "resource_plan": {
+            "short_run_feasibility": "proceed",
+            "full_run_feasibility": "borderline",
+        },
+        "resource_detection": {
+            "cpu": {"logical_cores": 8},
+            "gpu": {"available_backends": ["CUDA"]},
+        },
+        "resource_recommendations": {
+            "parallel_strategy": "high-parallelism",
+        },
+        "static_smoke": {
+            "status": "passed",
+            "checks": [
+                {"name": "syntax-parse", "status": "passed", "passed": ["model.py"], "blockers": []}
+            ],
+            "blockers": [],
+        },
+        "runtime_smoke": {
+            "status": "planned",
+            "checks": [
+                {"name": "short-run-command", "status": "planned", "passed": [], "blockers": ["not-executed-yet"]}
+            ],
+            "blockers": [],
+        },
+        "smoke_report": {
+            "status": "planned",
+            "static_smoke": {
+                "status": "passed",
+                "checks": [
+                    {"name": "syntax-parse", "status": "passed", "passed": ["model.py"], "blockers": []}
+                ],
+                "blockers": [],
+            },
+            "runtime_smoke": {
+                "status": "planned",
+                "checks": [
+                    {"name": "short-run-command", "status": "planned", "passed": [], "blockers": ["not-executed-yet"]}
+                ],
+                "blockers": [],
+            },
+            "blockers": [],
         },
         "human_checkpoint_state": "not-required",
         "sota_claim_state": "candidate-exceeds-provided-sota",
@@ -176,9 +287,14 @@ def main() -> int:
             top_runs = (output_dir / "TOP_RUNS.md").read_text(encoding="utf-8")
             status = json.loads((output_dir / "status.json").read_text(encoding="utf-8"))
             if mode == "research":
-                for rel in ["IDEA_GATE.md", "EXPERIMENT_PLAN.md", "EXPERIMENT_LEDGER.md"]:
+                for rel in ["IDEA_GATE.md", "EXPERIMENT_PLAN.md", "EXPERIMENT_MANIFEST.md", "EXPERIMENT_LEDGER.md", "TRANSPLANT_SMOKE_REPORT.md"]:
                     if not (output_dir / rel).exists():
                         raise AssertionError(f"Missing `{rel}` for research output rendering")
+                manifest = (output_dir / "EXPERIMENT_MANIFEST.md").read_text(encoding="utf-8")
+                smoke = (output_dir / "TRANSPLANT_SMOKE_REPORT.md").read_text(encoding="utf-8")
+                assert_contains(manifest, "paper:abc12345", "research/EXPERIMENT_MANIFEST.md")
+                assert_contains(smoke, "syntax-parse", "research/TRANSPLANT_SMOKE_REPORT.md")
+                assert_contains(smoke, "Runtime Smoke", "research/TRANSPLANT_SMOKE_REPORT.md")
 
             assert_contains(changeset, "# Explore Changeset", f"{mode}/CHANGESET.md")
             assert_contains(changeset, "exp/lora-demo", f"{mode}/CHANGESET.md")
@@ -213,9 +329,25 @@ def main() -> int:
                 raise AssertionError("explore status lost helper stage trace")
             if mode == "research" and status["sota_claim_state"] != "candidate-exceeds-provided-sota":
                 raise AssertionError("research explore status lost sota_claim_state")
+            if mode == "research" and status["outputs"]["experiment_manifest"] != "explore_outputs/EXPERIMENT_MANIFEST.md":
+                raise AssertionError("research explore status lost experiment_manifest output")
+            if mode == "research" and status["resource_plan"]["short_run_feasibility"] != "proceed":
+                raise AssertionError("research explore status lost resource plan")
+            if mode == "research" and status["smoke_report"]["status"] != "planned":
+                raise AssertionError("research explore status lost smoke report")
+            if mode == "research" and status["static_smoke"]["status"] != "passed":
+                raise AssertionError("research explore status lost static smoke")
+            if mode == "research" and status["runtime_smoke"]["status"] != "planned":
+                raise AssertionError("research explore status lost runtime smoke")
+            if mode == "research" and status["sources_index_path"] != "D:/demo/sources/index.json":
+                raise AssertionError("research explore status lost sources index path")
+            if mode == "research" and status["source_inventory_path"] != "D:/demo/analysis_outputs/SOURCE_INVENTORY.md":
+                raise AssertionError("research explore status lost source inventory path")
+            if mode == "research" and status["source_record_count"] != 1:
+                raise AssertionError("research explore status lost source record count")
 
         print("ok: True")
-        print("checks: 30")
+        print("checks: 40")
         print("failures: 0")
         return 0
     finally:

@@ -185,6 +185,10 @@
         "SKILL.md",
         "references/research-explore-policy.md",
         "references/research-campaign-spec.md",
+        "references/idea-evaluation-framework.md",
+        "references/source-mapping-policy.md",
+        "references/smoke-validation-policy.md",
+        "references/sources-naming-policy.md",
         "scripts/orchestrate_explore.py",
         "scripts/write_outputs.py"
       ],
@@ -195,7 +199,9 @@
           "CHANGESET.md",
           "IDEA_GATE.md",
           "EXPERIMENT_PLAN.md",
+          "EXPERIMENT_MANIFEST.md",
           "EXPERIMENT_LEDGER.md",
+          "TRANSPLANT_SMOKE_REPORT.md",
           "TOP_RUNS.md",
           "status.json"
         ]

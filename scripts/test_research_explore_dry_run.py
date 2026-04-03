@@ -117,6 +117,14 @@ def main() -> int:
             raise AssertionError("research-explore lost setup command platform metadata")
         if not payload["recommended_next_trials"]:
             raise AssertionError("research-explore failed to recommend next trials")
+        if not payload["analysis_artifacts"]["idea_cards"].endswith("IDEA_CARDS.json"):
+            raise AssertionError("research-explore failed to expose analysis artifacts")
+        if not payload["sources_index_path"]:
+            raise AssertionError("research-explore failed to expose sources index path")
+        if not payload["minimal_patch_plan"]:
+            raise AssertionError("research-explore failed to expose a minimal patch plan")
+        if payload["resource_plan"]["short_run_feasibility"] != "proceed":
+            raise AssertionError("research-explore dry-run lost short-run feasibility")
 
         branch_check = subprocess.run(
             ["git", "branch", "--list", payload["experiment_branch"]],
@@ -141,6 +149,10 @@ def main() -> int:
             raise AssertionError("research-explore status lost canonical explore_context")
         if not status["helper_stage_trace"]:
             raise AssertionError("research-explore status lost helper stage trace")
+        if status["resource_plan"]["short_run_feasibility"] != "proceed":
+            raise AssertionError("research-explore status lost resource feasibility")
+        if not status["minimal_patch_plan"]:
+            raise AssertionError("research-explore status lost minimal patch plan")
 
         invalid = subprocess.run(
             [
@@ -160,7 +172,7 @@ def main() -> int:
             raise AssertionError("research-explore accepted an invalid current_research anchor")
 
         print("ok: True")
-        print("checks: 16")
+        print("checks: 22")
         print("failures: 0")
         return 0
     finally:

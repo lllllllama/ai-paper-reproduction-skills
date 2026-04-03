@@ -266,6 +266,7 @@ def write_experiment_plan(output_dir: Path, context: Dict[str, Any]) -> None:
     lines = [
         "# Experiment Plan",
         "",
+        f"- Manifest status: `{manifest.get('status', 'ready')}`",
         f"- Current research: `{current_research_value(context)}`",
         f"- Parent baseline: `{manifest.get('parent_baseline', current_research_value(context))}`",
         f"- Idea id: `{manifest.get('idea_id', 'none')}`",
@@ -289,6 +290,10 @@ def write_experiment_plan(output_dir: Path, context: Dict[str, Any]) -> None:
         "",
         bullets(manifest.get("supporting_changes", [])),
         "",
+        "## Blockers",
+        "",
+        bullets(manifest.get("blockers", [])),
+        "",
         "## Short-Run Gate",
         "",
         f"- Status: `{short_run_gate.get('status', 'not-run')}`",
@@ -296,6 +301,80 @@ def write_experiment_plan(output_dir: Path, context: Dict[str, Any]) -> None:
         "",
     ]
     (output_dir / "EXPERIMENT_PLAN.md").write_text("\n".join(lines), encoding="utf-8")
+
+
+def write_experiment_manifest(output_dir: Path, context: Dict[str, Any]) -> None:
+    manifest = context.get("experiment_manifest", {})
+    lines = [
+        "# Experiment Manifest",
+        "",
+        f"- Status: `{manifest.get('status', 'ready')}`",
+        f"- Current research: `{current_research_value(context)}`",
+        f"- Idea id: `{manifest.get('idea_id', 'none')}`",
+        f"- Parent baseline: `{manifest.get('parent_baseline', current_research_value(context))}`",
+        f"- Primary metric: `{manifest.get('primary_metric', 'unspecified')}`",
+        f"- Promotion rule: `{manifest.get('promotion_rule', 'manual-review')}`",
+        "",
+        "## Hypothesis",
+        "",
+        bullets([manifest.get("hypothesis", "")]),
+        "",
+        "## Source References",
+        "",
+        bullets([str(item) for item in manifest.get("selected_source_reference", [])]),
+        "",
+        "## Source Record",
+        "",
+        bullets(
+            [
+                f"source_repo={manifest.get('selected_source_record', {}).get('source_repo', '') or 'none'}",
+                f"source_file={manifest.get('selected_source_record', {}).get('source_file', '') or 'none'}",
+                f"source_symbol={manifest.get('selected_source_record', {}).get('source_symbol', '') or 'none'}",
+            ]
+        ),
+        "",
+        "## Target Location Map",
+        "",
+        bullets(
+            [
+                f"{item.get('file', 'unknown')} -> {item.get('target_symbol', 'unknown')} ({item.get('role', 'unknown')})"
+                for item in manifest.get("target_location_map", [])
+            ]
+        ),
+        "",
+        "## Minimal Patch Plan",
+        "",
+        bullets(
+            [
+                f"{item.get('change_type', 'unknown')}: {', '.join(item.get('target_files', [])) or 'none'}"
+                for item in manifest.get("minimal_patch_plan", [])
+            ]
+        ),
+        "",
+        "## Smoke Validation Plan",
+        "",
+        bullets(
+            [
+                f"{item.get('name', 'unknown')}: {item.get('reason', 'no-reason')}"
+                for item in manifest.get("smoke_validation_plan", [])
+            ]
+        ),
+        "",
+        "## Feasibility Summary",
+        "",
+        bullets(
+            [
+                f"short_run_feasibility={manifest.get('feasibility_summary', {}).get('short_run_feasibility', 'unknown')}",
+                f"full_run_feasibility={manifest.get('feasibility_summary', {}).get('full_run_feasibility', 'unknown')}",
+            ]
+        ),
+        "",
+        "## Blockers",
+        "",
+        bullets(manifest.get("blockers", [])),
+        "",
+    ]
+    (output_dir / "EXPERIMENT_MANIFEST.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 def write_experiment_ledger(output_dir: Path, context: Dict[str, Any]) -> None:
@@ -326,6 +405,58 @@ def write_experiment_ledger(output_dir: Path, context: Dict[str, Any]) -> None:
     (output_dir / "EXPERIMENT_LEDGER.md").write_text("\n".join(lines), encoding="utf-8")
 
 
+def write_transplant_smoke_report(output_dir: Path, context: Dict[str, Any]) -> None:
+    smoke_report = context.get("smoke_report", {})
+    static_smoke = context.get("static_smoke", smoke_report.get("static_smoke", {}))
+    runtime_smoke = context.get("runtime_smoke", smoke_report.get("runtime_smoke", {}))
+    resource_plan = context.get("resource_plan", {})
+    lines = [
+        "# Transplant Smoke Report",
+        "",
+        f"- Overall status: `{smoke_report.get('status', 'not-run')}`",
+        f"- Candidate-only semantics: `true`",
+        f"- Short-run feasibility: `{resource_plan.get('short_run_feasibility', 'unknown')}`",
+        f"- Full-run feasibility: `{resource_plan.get('full_run_feasibility', 'unknown')}`",
+        "",
+        "## Static Smoke",
+        "",
+    ]
+    static_checks = static_smoke.get("checks", [])
+    if not static_checks:
+        lines.append("- None.")
+    else:
+        for item in static_checks:
+            passed = ", ".join(item.get("passed", [])) or "none"
+            blockers = ", ".join(item.get("blockers", [])) or "none"
+            lines.append(
+                f"- `{item.get('name', 'unknown')}` status=`{item.get('status', 'unknown')}` passed={passed} blockers={blockers}"
+            )
+    lines.extend(["", "## Runtime Smoke", ""])
+    runtime_checks = runtime_smoke.get("checks", [])
+    if not runtime_checks:
+        lines.append("- None.")
+    else:
+        for item in runtime_checks:
+            passed = ", ".join(item.get("passed", [])) or "none"
+            blockers = ", ".join(item.get("blockers", [])) or "none"
+            lines.append(
+                f"- `{item.get('name', 'unknown')}` status=`{item.get('status', 'unknown')}` passed={passed} blockers={blockers}"
+            )
+    lines.extend(
+        [
+            "",
+            "## Combined Blockers",
+            "",
+        ]
+    )
+    blockers = smoke_report.get("blockers", [])
+    if not blockers:
+        lines.append("- None.")
+    else:
+        lines.extend([f"- {item}" for item in blockers])
+    (output_dir / "TRANSPLANT_SMOKE_REPORT.md").write_text("\n".join(lines), encoding="utf-8")
+
+
 def write_status(output_dir: Path, context: Dict[str, Any], mode: str) -> None:
     explore_context = explore_context_payload(context)
     current_research = explore_context["current_research"]
@@ -339,7 +470,9 @@ def write_status(output_dir: Path, context: Dict[str, Any], mode: str) -> None:
             {
                 "idea_gate": "explore_outputs/IDEA_GATE.md",
                 "experiment_plan": "explore_outputs/EXPERIMENT_PLAN.md",
+                "experiment_manifest": "explore_outputs/EXPERIMENT_MANIFEST.md",
                 "experiment_ledger": "explore_outputs/EXPERIMENT_LEDGER.md",
+                "transplant_smoke_report": "explore_outputs/TRANSPLANT_SMOKE_REPORT.md",
             }
         )
     payload = {
@@ -369,8 +502,33 @@ def write_status(output_dir: Path, context: Dict[str, Any], mode: str) -> None:
         "short_run_gate": context.get("short_run_gate", {}),
         "best_runs": context.get("best_runs", []),
         "candidate_edit_targets": context.get("candidate_edit_targets", []),
+        "target_location_map": context.get("target_location_map", []),
+        "supporting_changes": context.get("supporting_changes", []),
+        "patch_surface_summary": context.get("patch_surface_summary", {}),
+        "minimal_patch_plan": context.get("minimal_patch_plan", []),
+        "smoke_validation_plan": context.get("smoke_validation_plan", []),
+        "module_candidates": context.get("module_candidates", []),
+        "selected_source_record": context.get("selected_source_record", {}),
+        "interface_diff": context.get("interface_diff", {}),
         "code_tracks": context.get("code_tracks", []),
         "candidate_hypotheses": context.get("candidate_hypotheses", []),
+        "analysis_artifacts": context.get("analysis_artifacts", {}),
+        "sources_dir": context.get("sources_dir"),
+        "sources_records_dir": context.get("sources_records_dir"),
+        "sources_index_path": context.get("sources_index_path"),
+        "source_inventory_path": context.get("source_inventory_path"),
+        "source_support_path": context.get("source_support_path"),
+        "source_record_count": context.get("source_record_count", 0),
+        "source_records_by_evidence_class": context.get("source_records_by_evidence_class", []),
+        "lookup_records": context.get("lookup_records", []),
+        "idea_cards": context.get("idea_cards", []),
+        "improvement_bank": context.get("improvement_bank", []),
+        "resource_plan": context.get("resource_plan", {}),
+        "resource_detection": context.get("resource_detection", {}),
+        "resource_recommendations": context.get("resource_recommendations", {}),
+        "static_smoke": context.get("static_smoke", {}),
+        "runtime_smoke": context.get("runtime_smoke", {}),
+        "smoke_report": context.get("smoke_report", {}),
         "planned_skill_chain": context.get("planned_skill_chain", []),
         "helper_stage_trace": context.get("helper_stage_trace", []),
         "recommended_next_trials": context.get("recommended_next_trials", []),
@@ -392,7 +550,9 @@ def write_bundle(mode: str, output_dir: Path, context: Dict[str, Any]) -> None:
     if mode == "research":
         write_idea_gate(output_dir, context)
         write_experiment_plan(output_dir, context)
+        write_experiment_manifest(output_dir, context)
         write_experiment_ledger(output_dir, context)
+        write_transplant_smoke_report(output_dir, context)
     write_status(output_dir, context, mode)
 
 

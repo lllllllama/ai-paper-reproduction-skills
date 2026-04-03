@@ -120,6 +120,19 @@ def main() -> int:
                 },
             ],
             "compute_budget": {"max_runtime_hours": 2},
+            "research_lookup": {
+                "seed_sources": [
+                    {
+                        "kind": "repo",
+                        "title": "Segmentation head transplant",
+                        "query": "segmentation_head transplant",
+                        "url": "https://github.com/openai/gym",
+                        "repo": "openai/gym",
+                        "file": "gym/core.py",
+                        "symbol": "Env",
+                    }
+                ]
+            },
             "variant_spec": {
                 "current_research": "seg-branch@abc1234",
                 "base_command": "python train.py --config configs/demo.yaml",
@@ -179,15 +192,32 @@ def main() -> int:
             raise AssertionError("research-explore did not surface the provided-SOTA overtake state")
         if payload["short_run_gate"]["status"] != "passed":
             raise AssertionError("research-explore did not pass the short-run gate")
+        if payload["lookup_record_count"] <= 0:
+            raise AssertionError("research-explore did not emit lookup records")
+        if not payload["minimal_patch_plan"]:
+            raise AssertionError("research-explore did not emit a minimal patch plan")
+        if payload["resource_plan"]["short_run_feasibility"] != "proceed":
+            raise AssertionError("research-explore did not emit the resource feasibility summary")
+        if payload["smoke_report"]["status"] != "passed":
+            raise AssertionError("research-explore did not emit the smoke report")
 
-        for rel in ["IDEA_GATE.md", "EXPERIMENT_PLAN.md", "EXPERIMENT_LEDGER.md", "status.json"]:
+        for rel in ["IDEA_GATE.md", "EXPERIMENT_PLAN.md", "EXPERIMENT_MANIFEST.md", "EXPERIMENT_LEDGER.md", "TRANSPLANT_SMOKE_REPORT.md", "status.json"]:
             if not (output_dir / rel).exists():
                 raise AssertionError(f"research-explore campaign flow failed to emit {rel}")
 
         analysis_dir = temp_root / "analysis_outputs"
-        for rel in ["RESEARCH_MAP.md", "CHANGE_MAP.md", "EVAL_CONTRACT.md", "status.json"]:
+        for rel in ["RESEARCH_MAP.md", "CHANGE_MAP.md", "EVAL_CONTRACT.md", "SOURCE_INVENTORY.md", "SOURCE_SUPPORT.json", "IMPROVEMENT_BANK.md", "IDEA_CARDS.json", "IDEA_EVALUATION.md", "IDEA_SCORES.json", "MODULE_CANDIDATES.md", "INTERFACE_DIFF.md", "RESOURCE_PLAN.md", "status.json"]:
             if not (analysis_dir / rel).exists():
                 raise AssertionError(f"research-explore campaign flow failed to emit analysis_outputs/{rel}")
+        idea_scores = json.loads((analysis_dir / "IDEA_SCORES.json").read_text(encoding="utf-8"))
+        if not idea_scores or idea_scores[0]["id"] != payload["selected_idea"]["id"]:
+            raise AssertionError("research-explore selected_idea diverged from IDEA_SCORES.json[0]")
+        sources_dir = temp_root / "sources"
+        for rel in ["index.json", "SUMMARY.md"]:
+            if not (sources_dir / rel).exists():
+                raise AssertionError(f"research-explore campaign flow failed to emit sources/{rel}")
+        if not (sources_dir / "records").exists():
+            raise AssertionError("research-explore campaign flow failed to emit sources/records")
 
         status = json.loads((output_dir / "status.json").read_text(encoding="utf-8"))
         if status["campaign"]["task_family"] != "segmentation":
@@ -200,9 +230,19 @@ def main() -> int:
             raise AssertionError("research-explore status lost SOTA claim state")
         if status["metric_policy"]["primary_metric"] != "val_loss":
             raise AssertionError("research-explore status lost the run-ranking metric policy")
+        if status["resource_plan"]["short_run_feasibility"] != "proceed":
+            raise AssertionError("research-explore status lost resource feasibility")
+        if status["smoke_report"]["status"] != "passed":
+            raise AssertionError("research-explore status lost smoke report")
+        if not status["lookup_records"]:
+            raise AssertionError("research-explore status lost lookup records")
+        if not status["source_inventory_path"] or not status["source_support_path"]:
+            raise AssertionError("research-explore status lost source inventory/support artifact paths")
+        if status["source_record_count"] <= 0:
+            raise AssertionError("research-explore status lost source record count")
 
         print("ok: True")
-        print("checks: 23")
+        print("checks: 36")
         print("failures: 0")
         return 0
     finally:

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 from pathlib import Path
@@ -201,6 +202,95 @@ def collect_output_hints(repo: Path, evaluation_source: Dict[str, Any]) -> List[
     return unique[:12]
 
 
+def unique_limit(values: Iterable[str], limit: int) -> List[str]:
+    ordered: List[str] = []
+    for item in values:
+        if item and item not in ordered:
+            ordered.append(item)
+        if len(ordered) >= limit:
+            break
+    return ordered
+
+
+def collect_module_files(
+    candidates: Dict[str, List[str]],
+    focus_files: List[str],
+) -> List[str]:
+    module_candidates = candidates.get("model", []) + candidates.get("train", []) + focus_files
+    return unique_limit(
+        [
+            path
+            for path in module_candidates
+            if path.endswith(".py") or any(token in path.lower() for token in ("model", "backbone", "encoder", "decoder", "head"))
+        ],
+        20,
+    )
+
+
+def collect_metric_files(candidates: Dict[str, List[str]], focus_files: List[str]) -> List[str]:
+    metric_candidates = candidates.get("eval", []) + focus_files
+    return unique_limit(
+        [
+            path
+            for path in metric_candidates
+            if any(token in path.lower() for token in ("eval", "metric", "benchmark", "test", "validation"))
+        ],
+        20,
+    )
+
+
+def collect_symbol_hints(repo: Path, candidate_paths: List[str]) -> Dict[str, List[str]]:
+    symbol_hints: List[str] = []
+    constructor_candidates: List[str] = []
+    forward_candidates: List[str] = []
+
+    for rel in candidate_paths[:24]:
+        path = repo / rel
+        if not path.exists() or path.suffix.lower() != ".py":
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8", errors="ignore"))
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef):
+                symbol_hints.append(f"{rel}:{node.name}")
+                has_init = any(isinstance(item, ast.FunctionDef) and item.name == "__init__" for item in node.body)
+                has_forward = any(isinstance(item, ast.FunctionDef) and item.name == "forward" for item in node.body)
+                if has_init:
+                    constructor_candidates.append(f"{rel}:{node.name}")
+                if has_forward:
+                    forward_candidates.append(f"{rel}:{node.name}.forward")
+            elif isinstance(node, ast.FunctionDef):
+                symbol_hints.append(f"{rel}:{node.name}")
+                if node.name in {"forward", "__call__", "predict"}:
+                    forward_candidates.append(f"{rel}:{node.name}")
+
+    return {
+        "symbol_hints": unique_limit(symbol_hints, 50),
+        "constructor_candidates": unique_limit(constructor_candidates, 20),
+        "forward_candidates": unique_limit(forward_candidates, 20),
+    }
+
+
+def collect_config_binding_hints(repo: Path, candidate_paths: List[str]) -> List[str]:
+    hints: List[str] = []
+    patterns = ("yaml.safe_load", "omegaconf", "argparse", "json.load", "fromfile", "config")
+    for rel in candidate_paths[:24]:
+        path = repo / rel
+        if not path.exists():
+            continue
+        if path.suffix.lower() not in {".py", ".yaml", ".yml", ".json", ".toml", ".ini"}:
+            continue
+        if path.suffix.lower() != ".py":
+            hints.append(rel)
+            continue
+        text = path.read_text(encoding="utf-8", errors="ignore").lower()
+        if any(pattern in text for pattern in patterns):
+            hints.append(rel)
+    return unique_limit(hints, 20)
+
+
 def collect_suspicious_patterns(repo: Path) -> List[str]:
     findings: List[str] = []
     python_files = [path for path in repo.rglob("*.py") if "__pycache__" not in path.parts]
@@ -337,6 +427,10 @@ def analyze_repo(repo: Path, context: Optional[Dict[str, Any]] = None) -> Dict[s
     data_interface_files = collect_data_interface_files(repo, task_family)
     suspicious = collect_suspicious_patterns(repo)
     output_hints = collect_output_hints(repo, evaluation_source)
+    module_files = collect_module_files(candidates, focus_files)
+    metric_files = collect_metric_files(candidates, focus_files)
+    symbol_info = collect_symbol_hints(repo, unique_limit(module_files + metric_files + candidates["train"] + candidates["eval"], 30))
+    config_binding_hints = collect_config_binding_hints(repo, unique_limit(candidates["config"] + focus_files + output_hints, 30))
     research_map = build_research_map(repo, readme or repo / "README.md", task_family, candidates, focus_files, output_hints)
     change_map = build_change_map(research_map, data_interface_files, evaluation_source)
     eval_contract = build_eval_contract(dataset, benchmark, evaluation_source, task_family, output_hints)
@@ -369,6 +463,12 @@ def analyze_repo(repo: Path, context: Optional[Dict[str, Any]] = None) -> Dict[s
         "research_map": research_map,
         "change_map": change_map,
         "eval_contract": eval_contract,
+        "symbol_hints": symbol_info["symbol_hints"],
+        "constructor_candidates": symbol_info["constructor_candidates"],
+        "forward_candidates": symbol_info["forward_candidates"],
+        "config_binding_hints": config_binding_hints,
+        "module_files": module_files,
+        "metric_files": metric_files,
         "suspicious_patterns": suspicious,
         "conservative_suggestions": conservative_suggestions[:5],
         "summary_lines": summary_lines,
@@ -511,6 +611,12 @@ def write_outputs(output_dir: Path, data: Dict[str, object]) -> None:
         "research_map": data["research_map"],
         "change_map": data["change_map"],
         "eval_contract": data["eval_contract"],
+        "symbol_hints": data["symbol_hints"],
+        "constructor_candidates": data["constructor_candidates"],
+        "forward_candidates": data["forward_candidates"],
+        "config_binding_hints": data["config_binding_hints"],
+        "module_files": data["module_files"],
+        "metric_files": data["metric_files"],
         "suspicious_patterns": data["suspicious_patterns"],
         "conservative_suggestions": data["conservative_suggestions"],
         "outputs": {

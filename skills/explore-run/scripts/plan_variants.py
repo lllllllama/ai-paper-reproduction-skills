@@ -149,6 +149,8 @@ def annotate_variant_scores(
                 "predicted_success_score": round(predicted_success_score, 4),
                 "predicted_gain_score": round(predicted_gain_score, 4),
                 "total_score": round(total_score, 4),
+                "estimated_runtime_units": round(1.0 + 3.0 * step_scale + 2.0 * subset_scale + axis_scale, 4),
+                "feasibility_annotations": [],
             }
         )
         annotated.append(annotated_item)
