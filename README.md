@@ -255,9 +255,10 @@ The campaign should freeze:
 - `benchmark`
 - `evaluation_source`
 - `sota_reference`
-- `candidate_ideas`
 - `compute_budget`
 - `variant_spec`
+
+`candidate_ideas` is preferred but optional. If omitted, the orchestrator may synthesize one conservative single-variable seed idea from the variant spec for compatibility mode.
 
 Optional campaign blocks:
 
@@ -316,7 +317,7 @@ Minimal variant-spec example:
 |---|---|
 | `repro_outputs/` | Trusted reproduction bundle |
 | `train_outputs/` | Trusted training execution bundle |
-| `analysis_outputs/` | Read-only project analysis, research map, change map, eval contract, improvement bank, idea cards, mapping, and resource plan |
+| `analysis_outputs/` | Read-only project analysis plus research map, change map, eval contract, source inventory/support, improvement bank, idea cards, mapping, and resource plan |
 | `debug_outputs/` | Safe debug diagnosis and patch plan |
 | `sources/` | Free-first research lookup records with `sources/records/`, stable names, bounded provider resolution, repo-local extraction, and an auditable index |
 | `explore_outputs/` | Exploratory changeset, idea gate, experiment plan, experiment manifest, split static/runtime smoke reporting, ledger, and ranked run summary |
@@ -398,6 +399,19 @@ python scripts/test_research_explore_campaign_abandon.py
 python scripts/test_research_explore_campaign_checkpoint.py
 python scripts/test_orchestrator_dry_run.py
 python scripts/test_training_lane_routing.py
+```
+
+Run research-lookup regressions:
+
+```bash
+python scripts/test_research_lookup_arxiv_provider.py
+python scripts/test_research_lookup_doi_provider.py
+python scripts/test_research_lookup_github_provider.py
+python scripts/test_research_lookup_url_provider.py
+python scripts/test_research_lookup_repo_extractor.py
+python scripts/test_research_lookup_cache.py
+python scripts/test_research_lookup_inventory_rendering.py
+python scripts/test_research_lookup_evidence_layers.py
 ```
 
 Run setup and installer regressions:
