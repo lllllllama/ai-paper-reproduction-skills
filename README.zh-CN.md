@@ -58,6 +58,50 @@
 
 ## 🛠️ 安装
 
+对大多数用户来说，优先用 `npx` 即可。这是最短路径，也最接近“开箱即用”。
+
+### 推荐：`npx`
+
+安装整套 skills：
+
+```bash
+npx skills add lllllllama/ai-paper-reproduction-skills --all
+```
+
+只安装 trusted 主入口：
+
+```bash
+npx skills add lllllllama/ai-paper-reproduction-skills --skill ai-research-reproduction
+```
+
+只安装 explore 主入口：
+
+```bash
+npx skills add lllllllama/ai-paper-reproduction-skills --skill ai-research-explore
+```
+
+如果你只是想尽快开始，用上面这几条就够了。
+
+Claude Code 可以根据描述自动调用这些 skills，也可以直接使用 `/ai-research-reproduction`、`/ai-research-explore`、`/safe-debug` 这样的命令。
+
+当前仓库提供的项目级 Claude Code slash commands：
+
+- `/ai-research-reproduction`
+- `/ai-research-explore`
+- `/analyze-project`
+- `/safe-debug`
+
+### 高级用法：本地 clone 安装
+
+只有在以下场景才建议继续用 Python 安装脚本：
+
+- 你正在本地开发这个仓库
+- 你需要 project-scoped 安装
+- 你要手动安装到中立 Agent Skills、Codex 或 Claude Code 目录
+
+<details>
+<summary>展开本地安装命令</summary>
+
 从本地 clone 安装到中立的 Agent Skills 目录：
 
 ```bash
@@ -106,19 +150,12 @@ python scripts/install_skills.py --client claude --target "$HOME/.claude/skills"
 python scripts/install_skills.py --client claude --target ./.claude/skills --force
 ```
 
-Claude Code 可以根据描述自动调用这些 skills，也可以直接使用 `/ai-research-reproduction`、`/ai-research-explore`、`/safe-debug` 这样的命令。
-
 PowerShell 补充说明：
 
 - Windows PowerShell 下，上面的命令可以直接照抄运行。
 - 如果你更习惯显式 Windows 路径，也可以把 `$HOME/.codex/skills` 换成 `$env:USERPROFILE\\.codex\\skills` 这类写法。
 
-当前仓库提供的项目级 Claude Code slash commands：
-
-- `/ai-research-reproduction`
-- `/ai-research-explore`
-- `/analyze-project`
-- `/safe-debug`
+</details>
 
 ## 🎯 入口选择
 

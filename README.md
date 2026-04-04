@@ -58,6 +58,46 @@ This repository is intended to be usable on both Windows and Linux.
 
 ## 🛠️ Install
 
+For most users, start with `npx`. It is the shortest path and should be enough for normal use.
+
+### Recommended: `npx`
+
+Install the full repository skill set:
+
+```bash
+npx skills add lllllllama/ai-paper-reproduction-skills --all
+```
+
+Install only the trusted main entrypoint:
+
+```bash
+npx skills add lllllllama/ai-paper-reproduction-skills --skill ai-research-reproduction
+```
+
+Install only the exploratory main entrypoint:
+
+```bash
+npx skills add lllllllama/ai-paper-reproduction-skills --skill ai-research-explore
+```
+
+If you only want to get started quickly, stop here.
+
+Claude Code can auto-invoke these skills when the descriptions match, or you can call them directly with commands such as `/ai-research-reproduction`, `/ai-research-explore`, and `/safe-debug`.
+
+Project-scoped Claude Code slash commands currently ship for:
+
+- `/ai-research-reproduction`
+- `/ai-research-explore`
+- `/analyze-project`
+- `/safe-debug`
+
+### Advanced: local clone installs
+
+Use the Python installer only if you are developing locally, need a project-scoped install, or want to target neutral Agent Skills, Codex, or Claude Code directories manually.
+
+<details>
+<summary>Show local install commands</summary>
+
 Install from a local clone into a neutral Agent Skills directory:
 
 ```bash
@@ -106,19 +146,12 @@ Install into a project-scoped Claude Code skills directory:
 python scripts/install_skills.py --client claude --target ./.claude/skills --force
 ```
 
-Claude Code can auto-invoke these skills when the descriptions match, or you can call them directly with commands such as `/ai-research-reproduction`, `/ai-research-explore`, and `/safe-debug`.
-
 PowerShell note:
 
 - In Windows PowerShell, the same commands work as written above.
 - If you prefer explicit Windows-style paths, replace `$HOME/.codex/skills` with something like `$env:USERPROFILE\\.codex\\skills`.
 
-Project-scoped Claude Code slash commands currently ship for:
-
-- `/ai-research-reproduction`
-- `/ai-research-explore`
-- `/analyze-project`
-- `/safe-debug`
+</details>
 
 ## 🎯 Choose an Entry Point
 
