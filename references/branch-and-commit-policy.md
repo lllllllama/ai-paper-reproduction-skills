@@ -12,7 +12,7 @@ This repository separates trusted execution from exploratory work.
 ## Explore lane
 
 - Default to an isolated branch or worktree.
-- `research-explore` should create or validate the isolated experiment branch before broader exploratory planning continues.
+- `ai-research-explore` should create or validate the isolated experiment branch before broader exploratory planning continues.
 - Direct commits are allowed inside the isolated experiment branch.
 - Exploration commits should be disposable and summary-oriented.
 - Never merge exploration results back into the trusted baseline without explicit researcher review.
@@ -31,3 +31,4 @@ Create a savepoint before:
 
 - Trusted lane should record branch, rationale, risk, and verification.
 - Explore lane should record baseline ref, experiment branch, source references, and top runs.
+

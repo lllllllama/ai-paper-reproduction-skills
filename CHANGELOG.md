@@ -2,7 +2,7 @@
 
 ## v1.0.0
 
-Initial public release of `ai-paper-reproduction-skills`.
+Initial public release of `ai-research-workflow-skills`.
 
 ### Scope
 
@@ -12,9 +12,15 @@ Initial public release of `ai-paper-reproduction-skills`.
 - training only as startup or partial verification unless explicitly needed
 - conservative patching with standardized outputs
 
+### Rename compatibility
+
+- repository brand: ai-research-workflow-skills
+- ai-paper-reproduction renamed to ai-research-reproduction
+- research-explore renamed to ai-research-explore
+
 ### Included skills
 
-- `ai-paper-reproduction`
+- `ai-research-reproduction`
   - main orchestration for README-first target selection, policy control, and output normalization
 - `repo-intake-and-plan`
   - scans the repository and extracts documented commands
@@ -56,3 +62,4 @@ The main flow has been trialed against a small set of public AI repositories. Se
 - environment and asset preparation stays conservative and lightweight
 - multilingual human-readable output currently focuses on English and Chinese
 - the repository is intentionally not a general paper summary, benchmark design, or experiment orchestration system
+

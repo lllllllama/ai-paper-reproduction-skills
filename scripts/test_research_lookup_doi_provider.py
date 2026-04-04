@@ -10,7 +10,7 @@ from pathlib import Path
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    scripts_dir = repo_root / "skills" / "research-explore" / "scripts"
+    scripts_dir = repo_root / "skills" / "ai-research-explore" / "scripts"
     sys.path.insert(0, str(scripts_dir))
 
     doi_provider = importlib.import_module("lookup.providers.doi_provider")
@@ -52,3 +52,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

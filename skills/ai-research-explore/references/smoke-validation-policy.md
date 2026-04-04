@@ -1,6 +1,6 @@
 # Smoke Validation Policy
 
-`research-explore` should prefer cheap, auditable smoke checks before broader exploratory execution.
+`ai-research-explore` should prefer cheap, auditable smoke checks before broader exploratory execution.
 
 ## Required Checks
 
@@ -22,3 +22,4 @@
 - smoke success does not imply trusted correctness
 - smoke success does not imply global benchmark validity
 - smoke failure should block broader candidate execution when the blocker is structural
+

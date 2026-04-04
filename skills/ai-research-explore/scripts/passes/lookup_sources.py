@@ -1,4 +1,4 @@
-"""Free-first, cache-first research lookup pass for research-explore."""
+"""Free-first, cache-first research lookup pass for ai-research-explore."""
 
 from __future__ import annotations
 
@@ -367,3 +367,4 @@ def run_lookup_pass(
         "queries": [item.get("query") for item in raw_records if item.get("kind") == "query"],
         "optional_provider_used": False,
     }
+

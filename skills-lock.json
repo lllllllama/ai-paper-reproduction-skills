@@ -1,10 +1,11 @@
 {
   "version": 1,
   "skills": {
-    "ai-paper-reproduction": {
+    "ai-research-reproduction": {
       "source": "lllllllama/ai-paper-reproduction-skills",
       "sourceType": "github",
       "computedHash": "e5349a0f675ad8eba661cdfa69c1343e48f7dc0ceea5c77a83ee7acc9411a25c"
     }
   }
 }
+

@@ -66,7 +66,7 @@ def remove_readonly(func, path, _excinfo) -> None:
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    orchestrator = repo_root / "skills" / "research-explore" / "scripts" / "orchestrate_explore.py"
+    orchestrator = repo_root / "skills" / "ai-research-explore" / "scripts" / "orchestrate_explore.py"
 
     temp_root = Path(tempfile.mkdtemp(prefix="codex-legacy-contract-", dir=repo_root))
     try:
@@ -117,7 +117,7 @@ def main() -> int:
         analysis_status = json.loads(analysis_status_path.read_text(encoding="utf-8"))
 
         if payload["campaign"]["mode"] != "legacy":
-            raise AssertionError("research-explore lost legacy mode under variant-spec orchestration")
+            raise AssertionError("ai-research-explore lost legacy mode under variant-spec orchestration")
         if payload["selected_source_record"] != status["selected_source_record"]:
             raise AssertionError("legacy variant-spec payload and status diverged on selected_source_record")
         if status["selected_source_record"] != status["experiment_manifest"]["selected_source_record"]:
@@ -148,3 +148,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

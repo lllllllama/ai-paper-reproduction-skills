@@ -36,7 +36,7 @@ def remove_readonly(func, path, _excinfo) -> None:
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    orchestrator = repo_root / "skills" / "research-explore" / "scripts" / "orchestrate_explore.py"
+    orchestrator = repo_root / "skills" / "ai-research-explore" / "scripts" / "orchestrate_explore.py"
 
     temp_root = Path(tempfile.mkdtemp(prefix="codex-research-campaign-checkpoint-", dir=repo_root))
     try:
@@ -133,9 +133,9 @@ def main() -> int:
 
         payload = json.loads(result.stdout)
         if payload["human_checkpoint_state"] != "idea-selection-confirmation-required":
-            raise AssertionError("research-explore did not request a checkpoint for near-tied ideas")
+            raise AssertionError("ai-research-explore did not request a checkpoint for near-tied ideas")
         if payload["executed_variant_count"] != 0:
-            raise AssertionError("research-explore should not auto-train when an idea checkpoint is required")
+            raise AssertionError("ai-research-explore should not auto-train when an idea checkpoint is required")
 
         print("ok: True")
         print("checks: 2")
@@ -148,3 +148,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

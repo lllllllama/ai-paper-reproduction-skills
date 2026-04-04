@@ -36,7 +36,7 @@ def remove_readonly(func, path, _excinfo) -> None:
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    orchestrator = repo_root / "skills" / "research-explore" / "scripts" / "orchestrate_explore.py"
+    orchestrator = repo_root / "skills" / "ai-research-explore" / "scripts" / "orchestrate_explore.py"
 
     temp_root = Path(tempfile.mkdtemp(prefix="codex-research-blocked-manifest-", dir=repo_root))
     try:
@@ -71,6 +71,10 @@ def main() -> int:
                     "single_variable_fit": 0.2,
                 }
             ],
+            "idea_generation": {
+                "allow_synthesized_seed_ideas": False,
+                "max_generated_ideas": 0,
+            },
             "variant_spec": {
                 "current_research": "seg-branch@abc1234",
                 "base_command": "python train.py",
@@ -107,11 +111,11 @@ def main() -> int:
         payload = json.loads(result.stdout)
         manifest = payload["experiment_manifest"]
         if manifest["status"] != "blocked":
-            raise AssertionError("research-explore did not block the manifest when no idea passed")
+            raise AssertionError("ai-research-explore did not block the manifest when no idea passed")
         if "no-selected-idea" not in manifest["blockers"]:
-            raise AssertionError("research-explore lost the blocked-manifest reason")
+            raise AssertionError("ai-research-explore lost the blocked-manifest reason")
         if payload["executed_variant_count"] != 0:
-            raise AssertionError("research-explore should not execute variants when the manifest is blocked")
+            raise AssertionError("ai-research-explore should not execute variants when the manifest is blocked")
         rendered = (output_dir / "EXPERIMENT_MANIFEST.md").read_text(encoding="utf-8")
         if "Status: `blocked`" not in rendered:
             raise AssertionError("rendered experiment manifest lost the blocked state")
@@ -127,3 +131,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

@@ -1,6 +1,6 @@
 # Source Mapping Policy
 
-Source mapping in `research-explore` is for bounded, auditable adaptation only.
+Source mapping in `ai-research-explore` is for bounded, auditable adaptation only.
 
 ## Required Outputs
 
@@ -25,3 +25,4 @@ These classes are preferred in that order.
 - train-loop redesign
 - metric or leaderboard mutation without explicit campaign permission
 - unscoped multi-module behavior changes
+

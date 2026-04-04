@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 
 REQUEST_TIMEOUT_SECONDS = 6
-USER_AGENT = "research-explore-lookup/2.0"
+USER_AGENT = "ai-research-explore-lookup/2.0"
 
 
 class MetadataHTMLParser(HTMLParser):
@@ -88,3 +88,4 @@ def coerce_author_list(values: Any) -> List[str]:
             elif str(item).strip():
                 authors.append(str(item).strip())
     return authors
+

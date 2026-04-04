@@ -1,4 +1,4 @@
-"""Hypothesis-card pass for research-explore."""
+"""Hypothesis-card pass for ai-research-explore."""
 
 from __future__ import annotations
 
@@ -55,3 +55,4 @@ def run_idea_card_pass(*, analysis_output_dir: Path, improvement_items: Sequence
         "artifact_path": str(path),
         "cards": cards,
     }
+

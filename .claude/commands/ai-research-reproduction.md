@@ -3,7 +3,7 @@ description: Run the trusted README-first reproduction workflow on this reposito
 argument-hint: [repo path or extra constraints]
 ---
 
-Read and follow @skills/ai-paper-reproduction/SKILL.md.
+Read and follow @skills/ai-research-reproduction/SKILL.md.
 
 Apply that skill to the current repository unless `$ARGUMENTS` clearly points to a different local repository path or adds extra constraints.
 

@@ -36,7 +36,7 @@ def remove_readonly(func, path, _excinfo) -> None:
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    orchestrator = repo_root / "skills" / "research-explore" / "scripts" / "orchestrate_explore.py"
+    orchestrator = repo_root / "skills" / "ai-research-explore" / "scripts" / "orchestrate_explore.py"
 
     temp_root = Path(tempfile.mkdtemp(prefix="codex-research-campaign-abandon-", dir=repo_root))
     try:
@@ -108,11 +108,11 @@ def main() -> int:
 
         payload = json.loads(result.stdout)
         if payload["baseline_gate"]["decision"] != "abandon":
-            raise AssertionError("research-explore did not abandon a far-from-SOTA baseline")
+            raise AssertionError("ai-research-explore did not abandon a far-from-SOTA baseline")
         if payload["executed_variant_count"] != 0:
-            raise AssertionError("research-explore should not execute campaign variants after baseline abandonment")
+            raise AssertionError("ai-research-explore should not execute campaign variants after baseline abandonment")
         if payload["short_run_gate"]["status"] != "not-run":
-            raise AssertionError("research-explore should keep short-run gate in not-run state after abandonment")
+            raise AssertionError("ai-research-explore should keep short-run gate in not-run state after abandonment")
 
         print("ok: True")
         print("checks: 3")
@@ -125,3 +125,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

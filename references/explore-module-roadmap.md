@@ -8,7 +8,7 @@ Planning document only. This roadmap describes how to evolve the current explore
 
 The current explore module already has a sound shape:
 
-- `research-explore` is the only end-to-end public orchestrator in the explore lane.
+- `ai-research-explore` is the only end-to-end public orchestrator in the explore lane.
 - `explore-code` and `explore-run` are narrow public leaf skills.
 - all explore outputs converge into `explore_outputs/`
 - `current_research` is the explicit anchor for exploratory work
@@ -46,18 +46,18 @@ That means:
 
 Goal:
 
-- upgrade `research-explore` from a planning-heavy orchestrator into a real coordinator with stronger local execution guarantees
+- upgrade `ai-research-explore` from a planning-heavy orchestrator into a real coordinator with stronger local execution guarantees
 
 Deliverables:
 
 - create or validate an isolated branch or worktree instead of only naming one
-- make `research-explore` explicitly invoke repository-local explore helpers rather than only recording a planned chain
+- make `ai-research-explore` explicitly invoke repository-local explore helpers rather than only recording a planned chain
 - preserve one canonical explore context object across code, run, and output phases
 - keep `current_research`, `experiment_branch`, and `explicit_explore_authorization` mandatory in the shared status payload
 
 Implementation targets:
 
-- `skills/research-explore/scripts/orchestrate_explore.py`
+- `skills/ai-research-explore/scripts/orchestrate_explore.py`
 - `shared/scripts/write_explore_bundle.py`
 - `references/branch-and-commit-policy.md`
 - `scripts/test_research_explore_dry_run.py`
@@ -157,7 +157,7 @@ Reasoning:
 
 If only three things get built next, they should be:
 
-1. actual isolated branch or worktree handling in `research-explore`
+1. actual isolated branch or worktree handling in `ai-research-explore`
 2. budget-aware pruning in `explore-run`
 3. a concrete planner helper for `explore-code`
 
@@ -165,7 +165,7 @@ These three changes improve the module more than cosmetic routing or naming twea
 
 ## Risks To Avoid
 
-- turning `research-explore` into a vague idea generator
+- turning `ai-research-explore` into a vague idea generator
 - letting `explore-run` expand combinatorially without budget controls
 - letting exploratory outputs imply trusted baseline improvement
 - making the leaf skills depend on tools or skills that are not bundled in this repository
@@ -173,7 +173,7 @@ These three changes improve the module more than cosmetic routing or naming twea
 
 ## Open Questions
 
-- Should `research-explore` require a metric name before candidate ranking starts, or allow pure structural exploration first
+- Should `ai-research-explore` require a metric name before candidate ranking starts, or allow pure structural exploration first
 - Should `explore-code` remain public after it gains a stronger planner, or should it eventually narrow toward helper status
 - Should `explore-run` support a repository-local notion of experiment budget in the shared explore schema
 - Should there be a later `trusted-followup` helper that consumes selected explore candidates without changing lane semantics
@@ -187,3 +187,4 @@ This roadmap is complete when the explore lane can do all of the following relia
 - coordinate code and run exploration in one flow
 - keep candidate ranking bounded and reviewable
 - hand off only by explicit human decision into a later trusted step
+

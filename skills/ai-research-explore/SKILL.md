@@ -1,9 +1,9 @@
 ---
-name: research-explore
+name: ai-research-explore
 description: Explore-lane end-to-end orchestrator for the third research scenario: the researcher has already chosen the task family, dataset, benchmark, evaluation method, and provided SOTA references, and wants candidate-only exploration on top of `current_research` with auditable repo understanding, idea gating, and governed experiments written to `explore_outputs/`. Do not use for README-first trusted reproduction, open-ended direction finding, narrow code-only or run-only exploration, passive repo analysis, or implicit experimentation.
 ---
 
-# research-explore
+# ai-research-explore
 
 ## Workflow
 
@@ -13,12 +13,15 @@ description: Explore-lane end-to-end orchestrator for the third research scenari
 - In campaign mode, always build repo-understanding artifacts that both the AI and the researcher can audit.
 - Use `analyze-project` to produce `analysis_outputs/RESEARCH_MAP.md`, `CHANGE_MAP.md`, and `EVAL_CONTRACT.md`.
 - Run the internal free-first, cache-first, provider-optional research lookup pass and cache auditable records into `sources/`; the built-in provider set is intentionally small and should be treated as bounded source resolution, not open-ended literature search.
-- Convert bounded candidate ideas into a structured improvement bank and hypothesis cards.
+- Preserve researcher-provided `candidate_ideas`, then optionally expand the search space with a bounded idea-seed generation pass that writes `analysis_outputs/IDEA_SEEDS.json`.
+- Convert the merged bounded idea pool into a structured improvement bank and hypothesis cards.
 - Use `env-and-assets-bootstrap` only when the environment or assets tied to `current_research` are still unclear.
 - Run a baseline gate before candidate training when a campaign includes evaluation details and provided SOTA references.
-- Run an idea gate before implementation; prefer one explicit single-variable idea over broad simultaneous changes and require source-backed cards.
+- Run an idea gate before implementation; prefer one explicit single-variable idea over broad simultaneous changes, require source-backed cards, and keep final selection inside the researcher pool when a researcher idea passes hard gates.
 - Use `explore-code` for bounded exploratory code adaptation.
 - Build source mapping, heuristic interface diff, minimal reversible patch planning, and split static/runtime smoke validation before wider execution.
+- Decompose the selected idea into atomic academic concepts with `analysis_outputs/ATOMIC_IDEA_MAP.md` and `analysis_outputs/ATOMIC_IDEA_MAP.json`; if no implementable atomic units can be derived, stop for a checkpoint instead of pretending the idea is ready.
+- Build implementation-fidelity expectations and summaries in `analysis_outputs/IMPLEMENTATION_FIDELITY.md` and `analysis_outputs/IMPLEMENTATION_FIDELITY.json`; distinguish `directly_verified`, `heuristic`, and `not_checked`.
 - Use `explore-run` for short-cycle trials, sweeps, and pre-execution candidate ranking.
 - Run execution feasibility and resource checks before broader candidate runs.
 - Let execution hand off to `minimal-run-and-audit` or `run-train` only when the exploratory plan needs real command execution.
@@ -32,7 +35,8 @@ description: Explore-lane end-to-end orchestrator for the third research scenari
 - Keep budget limits explicit through `max_variants` and `max_short_cycle_runs`.
 - After candidates actually run, rank results by real execution evidence: `status` first, then `primary_metric` and `metric_goal` when provided.
 - In campaign mode, rank ideas separately from run variants. Hard gates should screen `single_variable_fit`, `interface_fit`, `patch_surface`, `dependency_drag`, `eval_risk`, and short-run feasibility before soft ranking.
-- Soft idea ranking should prefer `expected_upside`, `single_variable_fit`, `interface_fit`, `rollback_ease`, `innovation_story_strength`, and `source_support_strength`, while penalizing `implementation_risk`, `eval_risk`, `estimated_runtime_cost`, `patch_surface`, `dependency_drag`, and `baseline_distance`.
+- Soft idea ranking should use explicit score breakdowns including `novelty_estimate`, `groundedness`, `source_support_strength`, `interface_fit`, `patch_surface`, `dependency_drag`, `ablation_clarity`, and `implementation_story_clarity`, together with the existing upside/risk fields.
+- If the active top-two ideas are too close, keep the human checkpoint rather than silently picking one.
 
 ## Campaign Inputs
 
@@ -48,6 +52,7 @@ description: Explore-lane end-to-end orchestrator for the third research scenari
 - `compute_budget`
 - `research_lookup`
 - `idea_policy`
+- `idea_generation`
 - `source_constraints`
 - `feasibility_policy`
 - `baseline_gate`
@@ -74,4 +79,5 @@ description: Explore-lane end-to-end orchestrator for the third research scenari
 
 ## Notes
 
-Use `references/research-explore-policy.md`, `references/research-campaign-spec.md`, `../../references/explore-variant-spec.md`, `scripts/orchestrate_explore.py`, and `scripts/write_outputs.py`.
+Use `references/ai-research-explore-policy.md`, `references/research-campaign-spec.md`, `../../references/explore-variant-spec.md`, `scripts/orchestrate_explore.py`, and `scripts/write_outputs.py`.
+

@@ -1,10 +1,10 @@
-"""Improvement mining pass for research-explore."""
+"""Improvement mining pass for ai-research-explore."""
 
 from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from lookup.record_schema import normalize_evidence_class
 
@@ -56,7 +56,7 @@ def match_sources(idea: Dict[str, Any], source_records: Sequence[Dict[str, Any]]
         + tokenize(idea.get("target_component"))
         + tokenize(idea.get("change_scope"))
     )
-    matches: List[tuple[int, Dict[str, Any]]] = []
+    matches: List[tuple[int, float, Dict[str, Any]]] = []
     for record in source_records:
         haystack = " ".join(
             [
@@ -89,7 +89,6 @@ def interface_fit_seed(
     code_plan: Dict[str, Any],
 ) -> float:
     tokens = set(tokenize(idea.get("target_component")) + tokenize(idea.get("summary")))
-    # Sparse repos should start from a neutral fit rather than failing the idea gate by default.
     score = 0.50
     candidate_targets = code_plan.get("candidate_edit_targets", [])
     if any(any(token in path.lower() for token in tokens) for path in candidate_targets):
@@ -120,17 +119,6 @@ def dependency_drag_score(idea: Dict[str, Any], matched_sources: Sequence[Dict[s
         + 0.04 * max(0, len(matched_sources) - 1),
         default=0.2,
     )
-
-
-def innovation_story_strength(idea: Dict[str, Any], matched_sources: Sequence[Dict[str, Any]]) -> float:
-    novelty_terms = {"novel", "cross", "adapter", "transplant", "hybrid", "augment", "improve", "replace"}
-    summary_tokens = set(tokenize(idea.get("summary")))
-    base = 0.35 + 0.10 * len(matched_sources)
-    if novelty_terms & summary_tokens:
-        base += 0.15
-    if idea.get("target_component"):
-        base += 0.10
-    return clamp(base, default=0.5)
 
 
 def source_support_strength(matched_sources: Sequence[Dict[str, Any]]) -> float:
@@ -164,6 +152,80 @@ def source_support_strength(matched_sources: Sequence[Dict[str, Any]]) -> float:
     )
 
 
+def groundedness_score(
+    *,
+    source_support: float,
+    interface_fit: float,
+    single_variable_fit: float,
+    eval_risk: float,
+) -> float:
+    return clamp(
+        0.15
+        + 0.35 * source_support
+        + 0.20 * interface_fit
+        + 0.20 * single_variable_fit
+        + 0.10 * (1.0 - eval_risk),
+        default=0.45,
+    )
+
+
+def novelty_estimate(idea: Dict[str, Any], matched_sources: Sequence[Dict[str, Any]]) -> float:
+    summary_tokens = set(tokenize(idea.get("summary")))
+    novelty_terms = {"novel", "cross", "adapter", "transplant", "hybrid", "augment", "replace", "rank"}
+    origin = str(idea.get("seed_origin") or "researcher")
+    score = 0.20
+    if novelty_terms & summary_tokens:
+        score += 0.20
+    if idea.get("target_component") and idea.get("change_scope") not in {"", "unspecified"}:
+        score += 0.15
+    if origin in {"synthesized", "hybrid"}:
+        score += 0.10
+    if matched_sources:
+        score += 0.05
+    return clamp(score, default=0.4)
+
+
+def ablation_clarity(
+    *,
+    single_variable_fit: float,
+    rollback_ease: float,
+    change_scope: str,
+) -> float:
+    score = 0.20 + 0.45 * single_variable_fit + 0.20 * rollback_ease
+    if change_scope and change_scope != "unspecified":
+        score += 0.10
+    return clamp(score, default=0.5)
+
+
+def implementation_story_clarity(
+    *,
+    interface_fit: float,
+    patch_surface: float,
+    target_component: str,
+    matched_sources: Sequence[Dict[str, Any]],
+) -> float:
+    score = 0.20 + 0.35 * interface_fit + 0.20 * (1.0 - patch_surface)
+    if target_component and target_component != "unspecified":
+        score += 0.10
+    if matched_sources:
+        score += 0.10
+    return clamp(score, default=0.45)
+
+
+def innovation_story_strength(
+    idea: Dict[str, Any],
+    matched_sources: Sequence[Dict[str, Any]],
+    novelty: float,
+    story_clarity: float,
+) -> float:
+    summary_tokens = set(tokenize(idea.get("summary")))
+    novelty_terms = {"novel", "cross", "adapter", "transplant", "hybrid", "augment", "improve", "replace"}
+    base = 0.30 + 0.10 * len(matched_sources) + 0.30 * novelty + 0.20 * story_clarity
+    if novelty_terms & summary_tokens:
+        base += 0.10
+    return clamp(base, default=0.5)
+
+
 def build_rationale(idea: Dict[str, Any], baseline_gate: Dict[str, Any], matched_sources: Sequence[Dict[str, Any]]) -> str:
     source_ids = ", ".join(item["source_id"] for item in matched_sources[:3]) or "no-source-id"
     external_ids = ", ".join(
@@ -190,16 +252,23 @@ def build_validation_path(campaign: Dict[str, Any], idea: Dict[str, Any]) -> str
     return f"Preserve `{command}` and verify `{idea.get('change_scope') or 'candidate change'}` via short-run gate before any wider run."
 
 
+def candidate_list(campaign: Dict[str, Any], candidate_ideas: Optional[Sequence[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+    if candidate_ideas is not None:
+        return [dict(item) for item in candidate_ideas]
+    return [dict(item) for item in campaign.get("candidate_ideas", [])]
+
+
 def build_improvement_bank(
     campaign: Dict[str, Any],
     analysis_data: Dict[str, Any],
     code_plan: Dict[str, Any],
     lookup_bundle: Dict[str, Any],
     baseline_gate: Dict[str, Any],
+    candidate_ideas: Optional[Sequence[Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
     bank: List[Dict[str, Any]] = []
     baseline_distance = baseline_distance_score(baseline_gate)
-    for idea in campaign.get("candidate_ideas", []):
+    for idea in candidate_list(campaign, candidate_ideas):
         matched_sources = matched_sources_for_idea(idea, lookup_bundle)
         external_source_reference = [
             item["source_id"]
@@ -216,11 +285,16 @@ def build_improvement_bank(
             for item in matched_sources
             if record_evidence_class(item) == "repo_local_extracted"
         ]
+        seed_only_reference = [
+            item["source_id"]
+            for item in matched_sources
+            if record_evidence_class(item) == "seed_only"
+        ]
         source_evidence_summary = {
             "external_provider_records": len(external_source_reference),
             "parsed_locator_records": len(parsed_locator_reference),
             "repo_local_extracted_records": len(repo_local_source_reference),
-            "seed_only_records": sum(1 for item in matched_sources if record_evidence_class(item) == "seed_only"),
+            "seed_only_records": len(seed_only_reference),
             "weighted_external_support": round(
                 sum(record_evidence_weight(item) for item in matched_sources if record_evidence_class(item) == "external_provider"),
                 4,
@@ -238,38 +312,77 @@ def build_improvement_bank(
                 4,
             ),
         }
+        expected_upside = clamp(idea.get("expected_upside"), default=0.5)
+        single_variable_fit = clamp(idea.get("single_variable_fit"), default=0.8)
+        implementation_risk = clamp(idea.get("implementation_risk"), default=0.5)
+        eval_risk = clamp(idea.get("eval_risk"), default=0.5)
+        rollback_ease = clamp(idea.get("rollback_ease"), default=0.5)
+        execution_cost = clamp(idea.get("estimated_runtime_cost"), default=0.5)
         patch_surface = patch_surface_score(code_plan, idea)
+        dependency_drag = dependency_drag_score(idea, matched_sources)
+        interface_fit = interface_fit_seed(idea, analysis_data, code_plan)
+        source_support = source_support_strength(matched_sources)
+        groundedness = groundedness_score(
+            source_support=source_support,
+            interface_fit=interface_fit,
+            single_variable_fit=single_variable_fit,
+            eval_risk=eval_risk,
+        )
+        novelty = novelty_estimate(idea, matched_sources)
+        story_clarity = implementation_story_clarity(
+            interface_fit=interface_fit,
+            patch_surface=patch_surface,
+            target_component=str(idea.get("target_component") or ""),
+            matched_sources=matched_sources,
+        )
+        ablation = ablation_clarity(
+            single_variable_fit=single_variable_fit,
+            rollback_ease=rollback_ease,
+            change_scope=str(idea.get("change_scope") or ""),
+        )
+        innovation_story = innovation_story_strength(idea, matched_sources, novelty, story_clarity)
         record = {
             "id": str(idea.get("id") or "idea"),
             "summary": str(idea.get("summary") or "Candidate improvement"),
             "rationale": build_rationale(idea, baseline_gate, matched_sources),
             "target_component": str(idea.get("target_component") or "unspecified"),
+            "change_scope": str(idea.get("change_scope") or "unspecified"),
+            "seed_origin": str(idea.get("seed_origin") or "researcher"),
             "source_reference": [item["source_id"] for item in matched_sources],
             "external_source_reference": external_source_reference,
             "parsed_locator_reference": parsed_locator_reference,
             "repo_local_source_reference": repo_local_source_reference,
+            "seed_only_source_reference": seed_only_reference,
             "source_evidence_summary": source_evidence_summary,
-            "expected_upside": clamp(idea.get("expected_upside"), default=0.5),
-            "single_variable_fit": clamp(idea.get("single_variable_fit"), default=0.8),
-            "implementation_risk": clamp(idea.get("implementation_risk"), default=0.5),
-            "eval_risk": clamp(idea.get("eval_risk"), default=0.5),
-            "rollback_ease": clamp(idea.get("rollback_ease"), default=0.5),
+            "expected_upside": expected_upside,
+            "single_variable_fit": single_variable_fit,
+            "implementation_risk": implementation_risk,
+            "eval_risk": eval_risk,
+            "rollback_ease": rollback_ease,
             "patch_surface": patch_surface,
-            "dependency_drag": dependency_drag_score(idea, matched_sources),
-            "interface_fit": interface_fit_seed(idea, analysis_data, code_plan),
-            "execution_cost": clamp(idea.get("estimated_runtime_cost"), default=0.5),
-            "innovation_story_strength": innovation_story_strength(idea, matched_sources),
-            "source_support_strength": source_support_strength(matched_sources),
+            "dependency_drag": dependency_drag,
+            "interface_fit": interface_fit,
+            "execution_cost": execution_cost,
+            "innovation_story_strength": innovation_story,
+            "source_support_strength": source_support,
+            "novelty_estimate": novelty,
+            "groundedness": groundedness,
+            "ablation_clarity": ablation,
+            "implementation_story_clarity": story_clarity,
             "baseline_distance": baseline_distance,
             "validation_path": build_validation_path(campaign, idea),
             "innovation_note": (
                 f"Candidate-only story for `{idea.get('change_scope') or 'change'}`; do not present as verified novelty."
             ),
+            "source_support_hint": str(idea.get("source_support_hint") or ""),
+            "feasibility_hint": str(idea.get("feasibility_hint") or ""),
             "provenance": {
-                "campaign_idea_id": str(idea.get("id") or "idea"),
+                "campaign_idea_id": str(idea.get("campaign_idea_id") or idea.get("id") or "idea"),
                 "matched_source_ids": [item["source_id"] for item in matched_sources],
                 "matched_external_source_ids": external_source_reference,
                 "analysis_files": analysis_data.get("module_files", [])[:4],
+                "seed_origin": str(idea.get("seed_origin") or "researcher"),
+                "selection_origin": str(idea.get("selection_origin") or "campaign"),
             },
         }
         bank.append(record)
@@ -292,6 +405,7 @@ def write_improvement_bank(output_dir: Path, bank: Sequence[Dict[str, Any]]) -> 
                     f"## {item['id']}",
                     "",
                     f"- Summary: {item['summary']}",
+                    f"- Seed origin: `{item.get('seed_origin', 'researcher')}`",
                     f"- Target component: `{item['target_component']}`",
                     f"- Source references: {', '.join(item['source_reference']) or 'none'}",
                     f"- External source references: {', '.join(item.get('external_source_reference', [])) or 'none'}",
@@ -300,6 +414,10 @@ def write_improvement_bank(output_dir: Path, bank: Sequence[Dict[str, Any]]) -> 
                     f"- Evidence summary: external={item.get('source_evidence_summary', {}).get('external_provider_records', 0)} parsed={item.get('source_evidence_summary', {}).get('parsed_locator_records', 0)} repo_local={item.get('source_evidence_summary', {}).get('repo_local_extracted_records', 0)} seed={item.get('source_evidence_summary', {}).get('seed_only_records', 0)}",
                     f"- Single-variable fit: `{item['single_variable_fit']}`",
                     f"- Interface fit: `{item['interface_fit']}`",
+                    f"- Groundedness: `{item['groundedness']}`",
+                    f"- Novelty estimate: `{item['novelty_estimate']}`",
+                    f"- Ablation clarity: `{item['ablation_clarity']}`",
+                    f"- Implementation story clarity: `{item['implementation_story_clarity']}`",
                     f"- Patch surface: `{item['patch_surface']}`",
                     f"- Dependency drag: `{item['dependency_drag']}`",
                     f"- Validation path: {item['validation_path']}",
@@ -320,11 +438,20 @@ def run_improvement_bank_pass(
     code_plan: Dict[str, Any],
     lookup_bundle: Dict[str, Any],
     baseline_gate: Dict[str, Any],
+    candidate_ideas: Optional[Sequence[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
-    bank = build_improvement_bank(campaign, analysis_data, code_plan, lookup_bundle, baseline_gate)
+    bank = build_improvement_bank(
+        campaign,
+        analysis_data,
+        code_plan,
+        lookup_bundle,
+        baseline_gate,
+        candidate_ideas=candidate_ideas,
+    )
     path = write_improvement_bank(analysis_output_dir, bank)
     return {
         "schema_version": "1.0",
         "artifact_path": str(path),
         "items": bank,
     }
+

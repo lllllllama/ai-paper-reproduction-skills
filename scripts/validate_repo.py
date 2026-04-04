@@ -17,10 +17,11 @@ ALLOWED_TIERS = {"public", "helper"}
 ALLOWED_LANES = {"trusted", "explore", "helper"}
 ROOT_REQUIRED_FILES = [
     "README.md",
+    "README.zh-CN.md",
     "CONTRIBUTING.md",
     ".editorconfig",
-    ".claude/commands/ai-paper-reproduction.md",
-    ".claude/commands/research-explore.md",
+    ".claude/commands/ai-research-reproduction.md",
+    ".claude/commands/ai-research-explore.md",
     ".claude/commands/analyze-project.md",
     ".claude/commands/safe-debug.md",
     "shared/scripts/write_explore_bundle.py",
@@ -53,6 +54,10 @@ ROOT_REQUIRED_TESTS = [
     "scripts/test_research_explore_campaign_flow.py",
     "scripts/test_research_explore_campaign_abandon.py",
     "scripts/test_research_explore_campaign_checkpoint.py",
+    "scripts/test_atomic_idea_decomposition.py",
+    "scripts/test_idea_seed_generation.py",
+    "scripts/test_implementation_fidelity.py",
+    "scripts/test_research_explore_contracts.py",
     "scripts/test_orchestrator_dry_run.py",
     "scripts/test_skill_registry.py",
     "scripts/test_analysis_output_rendering.py",
@@ -268,3 +273,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

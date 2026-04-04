@@ -42,7 +42,7 @@ def remove_readonly(func, path, _excinfo) -> None:
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    orchestrator = repo_root / "skills" / "research-explore" / "scripts" / "orchestrate_explore.py"
+    orchestrator = repo_root / "skills" / "ai-research-explore" / "scripts" / "orchestrate_explore.py"
 
     temp_root = Path(tempfile.mkdtemp(prefix="codex-artifact-consistency-", dir=repo_root))
     try:
@@ -133,6 +133,8 @@ def main() -> int:
         analysis_status = json.loads((temp_root / "analysis_outputs" / "status.json").read_text(encoding="utf-8"))
         manifest = explore_status["experiment_manifest"]
         selected_source_record = payload["selected_source_record"]
+        atomic_map = payload["atomic_idea_map"]
+        fidelity_summary = payload["fidelity_summary"]
 
         if not selected_source_record:
             raise AssertionError("artifact consistency run did not produce a canonical selected_source_record")
@@ -152,6 +154,16 @@ def main() -> int:
             raise AssertionError("payload and explore status diverged on target_location_map")
         if payload["target_location_map"] != manifest["target_location_map"]:
             raise AssertionError("payload and manifest diverged on target_location_map")
+        if atomic_map != explore_status["atomic_idea_map"]:
+            raise AssertionError("payload and explore status diverged on atomic_idea_map")
+        if atomic_map != analysis_status["atomic_idea_map"]:
+            raise AssertionError("payload and analysis status diverged on atomic_idea_map")
+        if fidelity_summary != explore_status["fidelity_summary"]:
+            raise AssertionError("payload and explore status diverged on fidelity_summary")
+        if fidelity_summary != analysis_status["fidelity_summary"]:
+            raise AssertionError("payload and analysis status diverged on fidelity_summary")
+        if fidelity_summary != manifest["implementation_fidelity_summary"]:
+            raise AssertionError("payload and manifest diverged on implementation_fidelity_summary")
 
         module_candidate = explore_status["module_candidates"][0]
         for key in ("source_repo", "source_file", "source_symbol"):
@@ -169,9 +181,17 @@ def main() -> int:
                 raise AssertionError("manifest markdown lost canonical source triple details")
             if value not in module_candidates_md:
                 raise AssertionError("module candidates markdown lost canonical source triple details")
+        if "Atomic Idea Map" not in (temp_root / "analysis_outputs" / "ATOMIC_IDEA_MAP.md").read_text(encoding="utf-8"):
+            raise AssertionError("atomic idea map markdown was not rendered")
+        fidelity_md = (temp_root / "analysis_outputs" / "IMPLEMENTATION_FIDELITY.md").read_text(encoding="utf-8")
+        if "Implementation Fidelity" not in fidelity_md:
+            raise AssertionError("implementation fidelity markdown was not rendered")
+        for key in fidelity_summary.get("verification_levels", {}):
+            if key not in fidelity_md:
+                raise AssertionError("implementation fidelity markdown diverged from fidelity summary verification levels")
 
         print("ok: True")
-        print("checks: 12")
+        print("checks: 18")
         print("failures: 0")
         return 0
     finally:
@@ -181,3 +201,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

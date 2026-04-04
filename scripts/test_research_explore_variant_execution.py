@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression checks for research-explore variant execution handoff."""
+"""Regression checks for ai-research-explore variant execution handoff."""
 
 from __future__ import annotations
 
@@ -60,9 +60,9 @@ def remove_readonly(func, path, _excinfo) -> None:
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    orchestrator = repo_root / "skills" / "research-explore" / "scripts" / "orchestrate_explore.py"
+    orchestrator = repo_root / "skills" / "ai-research-explore" / "scripts" / "orchestrate_explore.py"
 
-    temp_root = Path(tempfile.mkdtemp(prefix="codex-research-explore-exec-", dir=repo_root))
+    temp_root = Path(tempfile.mkdtemp(prefix="codex-ai-research-explore-exec-", dir=repo_root))
     try:
         sample_repo = temp_root / "sample_repo"
         sample_repo.mkdir()
@@ -110,45 +110,49 @@ def main() -> int:
         payload = json.loads(result.stdout)
         workspace_root = Path(payload["workspace"]["workspace_root"])
         if payload["executed_variant_count"] != 2:
-            raise AssertionError("research-explore did not execute the requested number of variants")
+            raise AssertionError("ai-research-explore did not execute the requested number of variants")
         if payload["workspace"]["mode"] != "worktree":
-            raise AssertionError("research-explore did not execute training variants in an isolated worktree")
+            raise AssertionError("ai-research-explore did not execute training variants in an isolated worktree")
         if workspace_root.resolve() == sample_repo.resolve():
-            raise AssertionError("research-explore reused the original checkout instead of an isolated worktree")
+            raise AssertionError("ai-research-explore reused the original checkout instead of an isolated worktree")
         if not (workspace_root / "execution-cwd.txt").exists():
-            raise AssertionError("research-explore did not run the training command inside the isolated worktree")
+            raise AssertionError("ai-research-explore did not run the training command inside the isolated worktree")
         if (sample_repo / "execution-cwd.txt").exists():
-            raise AssertionError("research-explore leaked training execution side effects into the original checkout")
+            raise AssertionError("ai-research-explore leaked training execution side effects into the original checkout")
         if len(payload["best_runs"]) != 2:
-            raise AssertionError("research-explore did not surface executed runs as best_runs")
+            raise AssertionError("ai-research-explore did not surface executed runs as best_runs")
         if payload["best_runs"][0]["id"] != "variant-001":
-            raise AssertionError("research-explore failed to apply metric-aware ranking for training variants")
+            raise AssertionError("ai-research-explore failed to apply metric-aware ranking for training variants")
         if payload["best_runs"][0]["best_metric"]["name"] != "val_acc":
-            raise AssertionError("research-explore lost best_metric metadata from run-train handoff")
+            raise AssertionError("ai-research-explore lost best_metric metadata from run-train handoff")
         if payload["best_runs"][0]["ranking_metric_name"] != "val_loss":
-            raise AssertionError("research-explore did not record the explicit training ranking metric")
+            raise AssertionError("ai-research-explore did not record the explicit training ranking metric")
+        if "changed_files" not in payload["best_runs"][0] or "new_files" not in payload["best_runs"][0] or "touched_paths" not in payload["best_runs"][0]:
+            raise AssertionError("ai-research-explore training execution lost executor evidence fields")
+        if not any("execution-cwd.txt" in item.get("new_files", []) for item in payload["best_runs"]):
+            raise AssertionError("ai-research-explore training execution did not preserve new file evidence from run-train")
         if payload["selection_policy"]["factors"] != ["cost", "success_rate", "expected_gain"]:
-            raise AssertionError("research-explore lost the pre-execution selection policy")
+            raise AssertionError("ai-research-explore lost the pre-execution selection policy")
         if payload["metric_policy"]["primary_metric"] != "val_loss":
-            raise AssertionError("research-explore lost the explicit training metric policy")
+            raise AssertionError("ai-research-explore lost the explicit training metric policy")
         if not any(entry["tool"] == "run-train/scripts/run_training.py" for entry in payload["invoked_stage_trace"]):
-            raise AssertionError("research-explore failed to record run-train handoff in the stage trace")
+            raise AssertionError("ai-research-explore failed to record run-train handoff in the stage trace")
 
         status = json.loads((output_dir / "status.json").read_text(encoding="utf-8"))
         if status["status"] != "completed":
-            raise AssertionError("research-explore status did not advance after executing candidate variants")
+            raise AssertionError("ai-research-explore status did not advance after executing candidate variants")
         if len(status["best_runs"]) != 2:
-            raise AssertionError("research-explore status lost executed best_runs")
+            raise AssertionError("ai-research-explore status lost executed best_runs")
         if status["best_runs"][0]["id"] != "variant-001":
-            raise AssertionError("research-explore status lost metric-aware training ordering")
+            raise AssertionError("ai-research-explore status lost metric-aware training ordering")
         if status["selection_policy"]["factors"] != ["cost", "success_rate", "expected_gain"]:
-            raise AssertionError("research-explore status lost selection policy")
+            raise AssertionError("ai-research-explore status lost selection policy")
 
         top_runs = (output_dir / "TOP_RUNS.md").read_text(encoding="utf-8")
         if "val_loss" not in top_runs:
-            raise AssertionError("research-explore top-runs summary lost training ranking policy")
+            raise AssertionError("ai-research-explore top-runs summary lost training ranking policy")
         if "variant-001" not in top_runs:
-            raise AssertionError("research-explore top-runs summary lost executed variant ranking")
+            raise AssertionError("ai-research-explore top-runs summary lost executed variant ranking")
 
         print("ok: True")
         print("checks: 17")
@@ -161,3 +165,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

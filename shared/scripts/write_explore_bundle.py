@@ -227,6 +227,8 @@ def write_idea_gate(output_dir: Path, context: Dict[str, Any]) -> None:
         "# Idea Gate",
         "",
         f"- Decision: `{idea_gate.get('decision', 'not-configured')}`",
+        f"- Active selection pool: `{idea_gate.get('active_selection_pool', 'all-eligible')}`",
+        f"- Selection reason: {idea_gate.get('selection_reason', 'none')}",
         f"- Human checkpoint state: `{context.get('human_checkpoint_state', 'not-applicable')}`",
         "",
         "## Ranked Ideas",
@@ -237,7 +239,7 @@ def write_idea_gate(output_dir: Path, context: Dict[str, Any]) -> None:
     else:
         for item in ranked:
             lines.append(
-                f"- `{item.get('id', 'unknown')}` score=`{item.get('idea_score', 'n/a')}` summary={item.get('summary', 'none')}"
+                f"- `{item.get('id', 'unknown')}` origin=`{item.get('seed_origin', 'researcher')}` score=`{item.get('idea_score', 'n/a')}` summary={item.get('summary', 'none')}"
             )
     lines.extend(
         [
@@ -253,6 +255,8 @@ def write_idea_gate(output_dir: Path, context: Dict[str, Any]) -> None:
             [
                 f"- id: `{selected.get('id', 'unknown')}`",
                 f"- summary: {selected.get('summary', 'none')}",
+                f"- seed_origin: `{selected.get('seed_origin', 'researcher')}`",
+                f"- selection_pool: `{selected.get('selection_pool', idea_gate.get('active_selection_pool', 'all-eligible'))}`",
                 f"- target_component: `{selected.get('target_component', 'unspecified')}`",
                 f"- change_scope: `{selected.get('change_scope', 'unspecified')}`",
             ]
@@ -263,6 +267,8 @@ def write_idea_gate(output_dir: Path, context: Dict[str, Any]) -> None:
 def write_experiment_plan(output_dir: Path, context: Dict[str, Any]) -> None:
     manifest = context.get("experiment_manifest", {})
     short_run_gate = context.get("short_run_gate", {})
+    atomic = context.get("atomic_idea_map", {})
+    fidelity = context.get("implementation_fidelity", {})
     lines = [
         "# Experiment Plan",
         "",
@@ -278,9 +284,13 @@ def write_experiment_plan(output_dir: Path, context: Dict[str, Any]) -> None:
         "",
         bullets([manifest.get("hypothesis", "")]),
         "",
-        "## Changed Files",
+        "## Planned Changed Files",
         "",
-        bullets(manifest.get("changed_files", [])),
+        bullets(manifest.get("planned_changed_files", manifest.get("changed_files", []))),
+        "",
+        "## Observed Changed Files",
+        "",
+        bullets(manifest.get("observed_changed_files", manifest.get("changed_files", []))),
         "",
         "## Config Overrides",
         "",
@@ -289,6 +299,24 @@ def write_experiment_plan(output_dir: Path, context: Dict[str, Any]) -> None:
         "## Supporting Changes",
         "",
         bullets(manifest.get("supporting_changes", [])),
+        "",
+        "## Atomic Decomposition",
+        "",
+        bullets(
+            [
+                f"status={atomic.get('status', 'blocked')}",
+                f"atomic_unit_count={atomic.get('atomic_unit_count', 0)}",
+            ]
+        ),
+        "",
+        "## Implementation Fidelity",
+        "",
+        bullets(
+            [
+                f"states={fidelity.get('fidelity_summary', {}).get('states', {})}",
+                f"verification_levels={fidelity.get('fidelity_summary', {}).get('verification_levels', {})}",
+            ]
+        ),
         "",
         "## Blockers",
         "",
@@ -305,6 +333,8 @@ def write_experiment_plan(output_dir: Path, context: Dict[str, Any]) -> None:
 
 def write_experiment_manifest(output_dir: Path, context: Dict[str, Any]) -> None:
     manifest = context.get("experiment_manifest", {})
+    atomic = context.get("atomic_idea_map", {})
+    fidelity = context.get("implementation_fidelity", {})
     lines = [
         "# Experiment Manifest",
         "",
@@ -366,6 +396,26 @@ def write_experiment_manifest(output_dir: Path, context: Dict[str, Any]) -> None
             [
                 f"short_run_feasibility={manifest.get('feasibility_summary', {}).get('short_run_feasibility', 'unknown')}",
                 f"full_run_feasibility={manifest.get('feasibility_summary', {}).get('full_run_feasibility', 'unknown')}",
+            ]
+        ),
+        "",
+        "## Atomic Idea Map",
+        "",
+        bullets(
+            [
+                f"ref={manifest.get('atomic_idea_map_ref', 'analysis_outputs/ATOMIC_IDEA_MAP.json')}",
+                f"status={atomic.get('status', 'blocked')}",
+                f"atomic_unit_count={atomic.get('atomic_unit_count', 0)}",
+            ]
+        ),
+        "",
+        "## Implementation Fidelity",
+        "",
+        bullets(
+            [
+                f"ref={manifest.get('implementation_fidelity_ref', 'analysis_outputs/IMPLEMENTATION_FIDELITY.json')}",
+                f"states={fidelity.get('fidelity_summary', {}).get('states', {})}",
+                f"verification_levels={fidelity.get('fidelity_summary', {}).get('verification_levels', {})}",
             ]
         ),
         "",
@@ -473,6 +523,10 @@ def write_status(output_dir: Path, context: Dict[str, Any], mode: str) -> None:
                 "experiment_manifest": "explore_outputs/EXPERIMENT_MANIFEST.md",
                 "experiment_ledger": "explore_outputs/EXPERIMENT_LEDGER.md",
                 "transplant_smoke_report": "explore_outputs/TRANSPLANT_SMOKE_REPORT.md",
+                "analysis_status": "analysis_outputs/status.json",
+                "idea_seeds": "analysis_outputs/IDEA_SEEDS.json",
+                "atomic_idea_map": "analysis_outputs/ATOMIC_IDEA_MAP.json",
+                "implementation_fidelity": "analysis_outputs/IMPLEMENTATION_FIDELITY.json",
             }
         )
     payload = {
@@ -497,6 +551,15 @@ def write_status(output_dir: Path, context: Dict[str, Any], mode: str) -> None:
         "baseline_gate": context.get("baseline_gate", {}),
         "idea_gate": context.get("idea_gate", {}),
         "selected_idea": context.get("selected_idea"),
+        "selected_idea_breakdown": context.get("selected_idea_breakdown", {}),
+        "idea_seeds": context.get("idea_seeds", {}),
+        "generated_idea_count": context.get("generated_idea_count", 0),
+        "researcher_idea_count": context.get("researcher_idea_count", 0),
+        "synthesized_idea_count": context.get("synthesized_idea_count", 0),
+        "atomic_idea_map": context.get("atomic_idea_map", {}),
+        "atomic_unit_count": context.get("atomic_unit_count", 0),
+        "implementation_fidelity": context.get("implementation_fidelity", {}),
+        "fidelity_summary": context.get("fidelity_summary", {}),
         "experiment_manifest": context.get("experiment_manifest", {}),
         "experiment_ledger": context.get("experiment_ledger", {}),
         "short_run_gate": context.get("short_run_gate", {}),

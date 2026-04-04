@@ -1,22 +1,31 @@
-# 🚀 ai-paper-reproduction-skills
+# 🚀 ai-research-workflow-skills
 
 <p>
-  <a href="./README.md">🇺🇸 English</a> ·
-  <a href="./README.zh-CN.md">🇨🇳 简体中文</a>
+  <a href="./README.md">English</a> |
+  <a href="./README.zh-CN.md">简体中文</a>
 </p>
 
 <p>
   <img alt="trusted by default" src="https://img.shields.io/badge/lane-trusted%20by%20default-1f6feb?style=flat-square">
   <img alt="explicit exploration" src="https://img.shields.io/badge/explore-explicit%20only-238636?style=flat-square">
-  <img alt="clients" src="https://img.shields.io/badge/clients-Agent%20Skills%20%C2%B7%20Codex%20%C2%B7%20Claude%20Code-6f42c1?style=flat-square">
+  <img alt="platforms" src="https://img.shields.io/badge/platforms-Windows%20%7C%20Linux-0a7ea4?style=flat-square">
   <img alt="skills" src="https://img.shields.io/badge/skills-11-8b949e?style=flat-square">
+  <img alt="public skills" src="https://img.shields.io/badge/public%20skills-9-0969da?style=flat-square">
+  <img alt="tests" src="https://img.shields.io/badge/tests-42%20scripts-8250df?style=flat-square">
+  <img alt="clients" src="https://img.shields.io/badge/clients-Agent%20Skills%20%C2%B7%20Codex%20%C2%B7%20Claude%20Code-6f42c1?style=flat-square">
 </p>
+
+Brand note: the repository brand is now `ai-research-workflow-skills`. If the GitHub repo slug has not been migrated yet, keep using `lllllllama/ai-paper-reproduction-skills` for clone and `npx skills add` commands until the slug migration is complete.
+
+Migration note:
+- `ai-paper-reproduction` -> `ai-research-reproduction`
+- `research-explore` -> `ai-research-explore`
 
 Lane-aware skill repository for deep learning research workflows.
 
-> 🧭 Trusted for reproduction, setup, analysis, training verification, and debugging.  
-> 🔬 Explore only when the researcher explicitly authorizes candidate-only work.  
-> 🤝 Share the same `SKILL.md` skills across Agent Skills, Codex, and Claude Code.
+> 🔒 Trusted for reproduction, setup, analysis, training verification, and debugging.  
+> 🧪 Explore only when the researcher explicitly authorizes candidate-only work.  
+> 🔗 Share the same `SKILL.md` contracts across Agent Skills, Codex, and Claude Code.
 
 This repository is built around one default rule: `trusted by default`.
 
@@ -25,40 +34,39 @@ This repository is built around one default rule: `trusted by default`.
 - Trusted outputs are auditable and durable.
 - Explore outputs are candidate-only and disposable.
 
+## 🧭 Current Repo Snapshot
+
+This repository currently ships:
+
+- `11` skills total: `9` public skills and `2` helper skills.
+- `6` trusted-lane public skills and `3` explore-lane public skills.
+- `4` project-scoped Claude Code command wrappers under `.claude/commands/`.
+- `42` Python test scripts, including `15` focused `research-explore` regressions.
+- A third-scenario explore chain that now includes bounded idea-seed generation, explicit idea score breakdowns, atomic idea decomposition, and implementation-fidelity evidence split into planned, heuristic, and observed layers.
+- A documented and tested workflow intended to be usable from both Windows PowerShell and Linux shells.
+
 The skills use the open `SKILL.md` layout, so the same repository can be installed into neutral Agent Skills directories as well as Codex and Claude Code. For shared local installs, prefer `~/.agents/skills/` or `./.agents/skills/`. Client-specific installs under `~/.codex/skills/` and `~/.claude/skills/` remain supported.
 
-🛠️ `ai-paper-reproduction` · 🔬 `research-explore` · 🧭 `env-and-assets-bootstrap` · 🔍 `analyze-project` · ✅ `minimal-run-and-audit` · 🧪 `run-train` · 🩺 `safe-debug` · 🧬 `explore-code` · 📈 `explore-run`
+## 💻 Windows and Linux Notes
 
-## ✨ What This Repo Covers
+This repository is intended to be usable on both Windows and Linux.
 
-**In scope**
+- The command examples below are written in a shell-neutral style around `python ...`, `npx ...`, and relative paths.
+- For user-scoped install targets, prefer `$HOME/.agents/skills`, `$HOME/.codex/skills`, and `$HOME/.claude/skills`. These work well in Linux shells and in PowerShell, and Python accepts forward slashes on Windows paths.
+- Project-scoped paths such as `./.agents/skills` and `./tmp/codex-skills` are also valid on both platforms.
+- The repository validation and routing checks are already exercised on Windows and Linux-oriented environments through local tests and CI.
 
-- README-first AI repository reproduction
-- Conservative environment, dataset, checkpoint, and cache planning
-- Read-only repository and model analysis
-- Trusted training startup verification and bounded training monitoring
-- Safe debugging for research repositories
-- Explicitly authorized exploratory code and run work
-- End-to-end exploratory orchestration on top of `current_research`
-
-**Out of scope**
-
-- General paper summarization
-- Unbounded autonomous research agents
-- Default large-scale code rewriting
-- Implicit experimentation on top of a trusted baseline
-
-## 🧭 Choose an Entry Point
+## 🎯 Choose an Entry Point
 
 | If you want to... | Use |
 |---|---|
-| Reproduce a repository end-to-end from the README | `ai-paper-reproduction` |
-| Run a third-scenario campaign on top of `current_research` with frozen task, eval, and SOTA inputs | `research-explore` |
+| Reproduce a repository end-to-end from the README | `ai-research-reproduction` |
+| Run a third-scenario campaign on top of `current_research` with frozen task, eval, and SOTA inputs | `ai-research-explore` |
 | Analyze the repository without editing or running heavy jobs | `analyze-project` |
 | Prepare environment, dataset, checkpoint, and cache assumptions | `env-and-assets-bootstrap` |
 | Run a documented inference or evaluation command conservatively | `minimal-run-and-audit` |
 | Start or resume documented training conservatively | `run-train` |
-| Diagnose a traceback or failed training/inference run safely | `safe-debug` |
+| Diagnose a traceback or failed training or inference run safely | `safe-debug` |
 | Make isolated exploratory code changes only | `explore-code` |
 | Run isolated exploratory trials only | `explore-run` |
 
@@ -67,32 +75,32 @@ Bundled helper skills:
 - `repo-intake-and-plan`
 - `paper-context-resolver`
 
-## 🔀 Lanes
+## 🛣️ Lane Model
 
-### 🛡️ Trusted lane
+### 🔒 Trusted Lane
 
 Use the trusted lane for reproduction, setup, analysis, bounded execution, training verification, and debugging.
 
-- Primary end-to-end orchestrator: `ai-paper-reproduction`
+- Primary end-to-end orchestrator: `ai-research-reproduction`
 - Output directories: `repro_outputs/`, `train_outputs/`, `analysis_outputs/`, `debug_outputs/`
 - Default stance: preserve scientific meaning, minimize semantic changes, surface assumptions and blockers
 
-### 🔬 Explore lane
+### 🧪 Explore Lane
 
 Use the explore lane only when the researcher explicitly authorizes candidate-only exploratory work.
 
-- Primary end-to-end orchestrator: `research-explore`
+- Primary end-to-end orchestrator: `ai-research-explore`
 - Narrow leaf skills: `explore-code`, `explore-run`
 - Output directory: `explore_outputs/`
 - Key anchor: `current_research`
 
 `current_research` should be a durable reference such as a branch, commit, checkpoint, run record, or already-trained local model state. It does not imply a trusted baseline; it is the context the exploration branches from.
 
-### 🧰 Helper lane
+### 🧰 Helper Lane
 
-Helpers are narrow and should usually be orchestrator-invoked rather than used as the first entry point.
+Helpers are intentionally narrow and should usually be orchestrator-invoked rather than used as the first entry point.
 
-## 🤝 Client Compatibility
+## 🔗 Client Compatibility
 
 `SKILL.md` is the canonical cross-client contract in this repository.
 
@@ -103,20 +111,22 @@ Helpers are narrow and should usually be orchestrator-invoked rather than used a
 
 See [references/client-compatibility-policy.md](references/client-compatibility-policy.md).
 
+## 🗺️ Routing Overview
+
 ```mermaid
 flowchart TD
-    A[User request] --> B{Explicit exploration?}
+    A[User request] --> B{Explicit candidate-only exploration?}
     B -- No --> C[Trusted lane]
     B -- Yes --> D[Explore lane]
 
-    C --> C1[ai-paper-reproduction]
+    C --> C1[ai-research-reproduction]
     C --> C2[analyze-project]
     C --> C3[env-and-assets-bootstrap]
     C --> C4[minimal-run-and-audit]
     C --> C5[run-train]
     C --> C6[safe-debug]
 
-    D --> D1[research-explore]
+    D --> D1[ai-research-explore]
     D --> D2[explore-code]
     D --> D3[explore-run]
 
@@ -124,12 +134,111 @@ flowchart TD
     C1 -. helper .-> H2[paper-context-resolver]
 ```
 
-## 📦 Install
+## 🧠 Third-Scenario Explore Flow
+
+`ai-research-explore` is optimized for the third scenario: the researcher has already frozen the task family, dataset, evaluation method, and provided SOTA references, and wants governed exploration on top of `current_research`.
+
+```mermaid
+flowchart LR
+    A[current_research + research_campaign] --> B[analysis_outputs and sources]
+    B --> C[IDEA_SEEDS.json<br/>bounded seed expansion]
+    C --> D[IDEA_SCORES.json<br/>IDEA_EVALUATION.md]
+    D --> E[ATOMIC_IDEA_MAP.md and .json]
+    E --> F[IMPLEMENTATION_FIDELITY.md and .json]
+    F --> G{Checkpoint and manifest clear?}
+    G -- No --> H[Stop with candidate-only blockers]
+    G -- Yes --> I[bounded short-cycle runs]
+    I --> J[explore_outputs<br/>candidate-only summary]
+```
+
+Current implementation highlights:
+
+- Researcher ideas are preserved, then optionally expanded with bounded synthesized or hybrid seed ideas in `analysis_outputs/IDEA_SEEDS.json`.
+- Idea ranking uses hard gates plus explicit weighted breakdowns in `analysis_outputs/IDEA_SCORES.json`.
+- Selected ideas are decomposed into atomic academic concepts in `analysis_outputs/ATOMIC_IDEA_MAP.md` and `analysis_outputs/ATOMIC_IDEA_MAP.json`.
+- Implementation fidelity distinguishes planned, heuristic, and observed implementation evidence in `analysis_outputs/IMPLEMENTATION_FIDELITY.md` and `analysis_outputs/IMPLEMENTATION_FIDELITY.json`.
+- Executor-observed evidence now comes from emitted `changed_files`, `new_files`, `deleted_files`, and `touched_paths` rather than planned target placeholders.
+
+The explore lane must not claim trusted reproduction success, global benchmark completeness, or verified novelty.
+
+## 📦 Public Skill Matrix
+
+| Lane | Skill | Purpose |
+|---|---|---|
+| Trusted | `ai-research-reproduction` | End-to-end README-first reproduction orchestrator |
+| Trusted | `env-and-assets-bootstrap` | Conservative environment, dataset, checkpoint, and cache planning |
+| Trusted | `minimal-run-and-audit` | Trusted inference, evaluation, smoke, and sanity execution |
+| Trusted | `analyze-project` | Read-only project analysis, model mapping, and risk surfacing |
+| Trusted | `run-train` | Training startup verification, resume handling, bounded monitoring, and training records |
+| Trusted | `safe-debug` | Research-safe debugging: analyze first, patch only after approval |
+| Explore | `ai-research-explore` | Third-scenario exploratory orchestration on top of `current_research` with repo understanding, idea gating, and governed experiments |
+| Explore | `explore-code` | Exploratory code adaptation, transplant, and stitching on isolated branches |
+| Explore | `explore-run` | Small-subset probes, short-cycle trials, and ranked exploratory runs |
+| Helper | `repo-intake-and-plan` | Narrow helper for repo scanning and README command extraction |
+| Helper | `paper-context-resolver` | Narrow helper for README-paper gap resolution |
+
+## 🧪 Testing Coverage Map
+
+This repository does not publish a single line-coverage percentage in the README. Instead, it documents the regression surface that is currently covered by repository tests.
+
+| Coverage area | Current scope | Representative checks |
+|---|---|---|
+| Registry, installation, and wrappers | File-level integrity, install targets, Claude wrappers, README routing | `test_skill_registry.py`, `test_install_targets.py`, `test_claude_command_wrappers.py`, `test_readme_selection.py` |
+| Trusted lane rendering and routing | Reproduction, training, analysis, debug, lane routing | `test_output_rendering.py`, `test_train_output_rendering.py`, `test_analysis_output_rendering.py`, `test_safe_debug_output_rendering.py`, `test_training_lane_routing.py` |
+| Explore lane orchestration | Dry run, campaign flow, checkpoint, abandon path, artifact consistency, execution feasibility | `test_research_explore_dry_run.py`, `test_research_explore_campaign_flow.py`, `test_research_explore_campaign_checkpoint.py`, `test_research_explore_campaign_abandon.py`, `test_research_explore_artifact_consistency.py` |
+| Explore idea and implementation contracts | Idea seeds, atomic decomposition, implementation fidelity, contract shape | `test_idea_seed_generation.py`, `test_atomic_idea_decomposition.py`, `test_implementation_fidelity.py`, `test_research_explore_contracts.py` |
+| Explore execution evidence | Training and non-training executor evidence propagation | `test_research_explore_variant_execution.py`, `test_research_explore_nontraining_execution.py` |
+| Research lookup | Provider resolution, cache, inventory rendering, repo extractors, evidence layering | `test_research_lookup_arxiv_provider.py`, `test_research_lookup_repo_extractor.py`, `test_research_lookup_inventory_rendering.py`, `test_research_lookup_evidence_layers.py` |
+
+Coverage notes:
+
+- `scripts/validate_repo.py` is still the fast file-level validator.
+- Deeper behavior contracts are primarily guarded by the explore and rendering regression tests above.
+- GitHub Actions validates the repository on `ubuntu-latest`, `macos-latest`, and `windows-latest`.
+
+## 📁 Output Directories
+
+| Directory | Purpose |
+|---|---|
+| `repro_outputs/` | Trusted reproduction bundle |
+| `train_outputs/` | Trusted training execution bundle |
+| `analysis_outputs/` | Read-only project analysis plus research map, change map, eval contract, source inventory/support, improvement bank, idea cards, idea seeds, atomic idea map, implementation fidelity, mapping, and resource plan |
+| `debug_outputs/` | Safe debug diagnosis and patch plan |
+| `sources/` | Free-first research lookup records with `sources/records/`, stable names, bounded provider resolution, repo-local extraction, and an auditable index |
+| `explore_outputs/` | Exploratory changeset, idea gate, experiment plan, experiment manifest, split static/runtime smoke reporting, ledger, and ranked run summary |
+
+## 🧩 Campaign Inputs
+
+`ai-research-explore` still accepts a plain `variant_spec.json`, but the preferred input for the third scenario is `research_campaign.json` or `research_campaign.yaml`.
+
+The campaign should freeze:
+
+- `task_family`
+- `dataset`
+- `benchmark`
+- `evaluation_source`
+- `sota_reference`
+- `compute_budget`
+- `variant_spec`
+
+`candidate_ideas` is preferred but optional. `ai-research-explore` preserves researcher ideas and may also add a small number of bounded synthesized or hybrid seed ideas for search-space expansion. Generated seeds stay bound to `current_research`, `task_family`, `dataset`, and the frozen `evaluation_source`.
+
+Optional campaign blocks:
+
+- `research_lookup`
+- `idea_policy`
+- `idea_generation`
+- `source_constraints`
+- `feasibility_policy`
+
+See [skills/ai-research-explore/references/research-campaign-spec.md](skills/ai-research-explore/references/research-campaign-spec.md).
+
+## 🛠️ Install
 
 Install from a local clone into a neutral Agent Skills directory:
 
 ```bash
-python scripts/install_skills.py --client agents --target ~/.agents/skills --force
+python scripts/install_skills.py --client agents --target "$HOME/.agents/skills" --force
 ```
 
 Install into a project-scoped neutral Agent Skills directory:
@@ -153,19 +262,19 @@ npx skills add lllllllama/ai-paper-reproduction-skills --all
 Install only the trusted reproduction orchestrator in Codex:
 
 ```bash
-npx skills add lllllllama/ai-paper-reproduction-skills --skill ai-paper-reproduction
+npx skills add lllllllama/ai-paper-reproduction-skills --skill ai-research-reproduction
 ```
 
 Install from a local clone into Codex:
 
 ```bash
-python scripts/install_skills.py --client codex --target ~/.codex/skills --force
+python scripts/install_skills.py --client codex --target "$HOME/.codex/skills" --force
 ```
 
 Install from a local clone into Claude Code:
 
 ```bash
-python scripts/install_skills.py --client claude --target ~/.claude/skills --force
+python scripts/install_skills.py --client claude --target "$HOME/.claude/skills" --force
 ```
 
 Install into a project-scoped Claude Code skills directory:
@@ -174,172 +283,38 @@ Install into a project-scoped Claude Code skills directory:
 python scripts/install_skills.py --client claude --target ./.claude/skills --force
 ```
 
-Claude Code can auto-invoke these skills when the descriptions match, or you can call them directly with commands such as `/ai-paper-reproduction`, `/research-explore`, and `/safe-debug`.
+Claude Code can auto-invoke these skills when the descriptions match, or you can call them directly with commands such as `/ai-research-reproduction`, `/ai-research-explore`, and `/safe-debug`.
 
-This repository also ships project-scoped Claude Code slash commands under `.claude/commands/` for the main entrypoints:
+PowerShell note:
 
-- `/ai-paper-reproduction`
-- `/research-explore`
+- In Windows PowerShell, the same commands work as written above.
+- If you prefer explicit Windows-style paths, replace `$HOME/.codex/skills` with something like `$env:USERPROFILE\\.codex\\skills`.
+
+Project-scoped Claude Code slash commands currently ship for:
+
+- `/ai-research-reproduction`
+- `/ai-research-explore`
 - `/analyze-project`
 - `/safe-debug`
-
-## 🧩 Public Skill Matrix
-
-| Lane | Skill | Purpose |
-|---|---|---|
-| Trusted | `ai-paper-reproduction` | End-to-end README-first reproduction orchestrator |
-| Trusted | `env-and-assets-bootstrap` | Conservative environment, dataset, checkpoint, and cache planning |
-| Trusted | `minimal-run-and-audit` | Trusted inference, evaluation, smoke, and sanity execution |
-| Trusted | `analyze-project` | Read-only project analysis, model mapping, and risk surfacing |
-| Trusted | `run-train` | Training startup verification, resume handling, bounded monitoring, and training records |
-| Trusted | `safe-debug` | Research-safe debugging: analyze first, patch only after approval |
-| Explore | `research-explore` | Third-scenario exploratory orchestration on top of `current_research` with repo understanding, idea gating, and governed experiments |
-| Explore | `explore-code` | Exploratory code adaptation, transplant, and stitching on isolated branches |
-| Explore | `explore-run` | Small-subset probes, short-cycle trials, and ranked exploratory runs |
-| Helper | `repo-intake-and-plan` | Narrow helper for repo scanning and README command extraction |
-| Helper | `paper-context-resolver` | Narrow helper for README-paper gap resolution |
-
-## 🔄 Core Flows
-
-### 🛠️ Trusted reproduction flow
-
-`ai-paper-reproduction` follows this high-level sequence:
-
-1. Scan the repository structure and README.
-2. Extract documented commands.
-3. Choose the smallest trustworthy target in this order:
-   - documented inference
-   - documented evaluation
-   - documented training
-4. Generate a conservative environment and asset plan.
-5. Execute through `minimal-run-and-audit` or `run-train`.
-6. Write `repro_outputs/`.
-7. If training was selected, also write `train_outputs/`.
-
-### 🧪 Trusted training semantics
-
-Training is intentionally conservative in the trusted lane.
-
-- If the README exposes a smaller documented inference or evaluation target, the orchestrator prefers that first.
-- If training is the current smallest trustworthy target, `run-train` starts with startup verification or a short monitored training check.
-- The trusted lane does not silently convert this into an open-ended long run.
-- The output should surface the fuller training command, a conservative duration hint, and the next safe action for the researcher.
-
-### 🔬 Exploratory research flow
-
-`research-explore` is now optimized for the third scenario: the researcher has already frozen the task family, dataset, evaluation method, and provided SOTA table, and wants the AI to govern implementation and experiments on top of `current_research`.
-
-1. Confirm `current_research`.
-2. Create or reserve an isolated experiment branch or worktree.
-3. Produce repository-understanding artifacts in `analysis_outputs/`.
-4. Cache research lookup records into `sources/`; current lookup is free-first, cache-first, provider-optional, repo-aware, and provider-limited rather than open-ended search.
-5. Run a baseline gate against the provided evaluation command and SOTA table.
-6. Build a bounded improvement bank and hypothesis cards.
-7. Run an idea gate across the supplied candidate directions.
-8. Build source mapping, heuristic interface diff, minimal patch planning, and execution feasibility.
-9. Build a single-variable experiment manifest.
-10. Run short-cycle candidate execution, and optionally a later full run only if feasibility and checkpoints remain clear.
-11. Keep all results candidate-only.
-12. Write `explore_outputs/`.
-
-The explore lane must not claim trusted reproduction success, global benchmark completeness, or verified novelty.
-
-### Campaign Inputs
-
-`research-explore` still accepts a plain `variant_spec.json`, but the preferred input for the third scenario is `research_campaign.json` or `research_campaign.yaml`.
-
-The campaign should freeze:
-
-- `task_family`
-- `dataset`
-- `benchmark`
-- `evaluation_source`
-- `sota_reference`
-- `compute_budget`
-- `variant_spec`
-
-`candidate_ideas` is preferred but optional. If omitted, the orchestrator may synthesize one conservative single-variable seed idea from the variant spec for compatibility mode.
-
-Optional campaign blocks:
-
-- `research_lookup`
-- `idea_policy`
-- `source_constraints`
-- `feasibility_policy`
-
-See [skills/research-explore/references/research-campaign-spec.md](skills/research-explore/references/research-campaign-spec.md).
-
-### 📈 Exploratory candidate ranking
-
-Before execution, `explore-run` now ranks candidates with three factors instead of cost alone:
-
-- `cost`: cheaper candidates are preferred
-- `success_rate`: candidates that are more likely to run cleanly are preferred
-- `expected_gain`: candidates that are more likely to produce a measurable improvement are preferred
-
-Default pre-execution weights are:
-
-- `cost = 0.25`
-- `success_rate = 0.35`
-- `expected_gain = 0.40`
-
-Budget is still enforced through `max_variants` and `max_short_cycle_runs`. After candidates actually run, `research-explore` switches to real execution evidence and ranks results by `status` plus `primary_metric` / `metric_goal` when provided.
-
-For campaign-style idea ranking, `research-explore` now uses hard gates plus weighted scoring. Hard gates screen `single_variable_fit`, `interface_fit`, `patch_surface`, `dependency_drag`, `eval_risk`, and short-run feasibility. Soft scoring then prefers upside, interface fit, rollback ease, innovation story strength, and source support while penalizing implementation drag and broader patch surface.
-
-Minimal variant-spec example:
-
-```json
-{
-  "current_research": "improved-model@branch",
-  "base_command": "python train.py --config configs/demo.yaml",
-  "variant_axes": {
-    "adapter": ["none", "lora"],
-    "lr": ["1e-4", "5e-5"]
-  },
-  "subset_sizes": [128, 512],
-  "short_run_steps": [100, 300],
-  "max_variants": 4,
-  "max_short_cycle_runs": 2,
-  "selection_weights": {
-    "cost": 0.25,
-    "success_rate": 0.35,
-    "expected_gain": 0.40
-  },
-  "primary_metric": "val_acc",
-  "metric_goal": "maximize"
-}
-```
-
-## 📁 Output Directories
-
-| Directory | Purpose |
-|---|---|
-| `repro_outputs/` | Trusted reproduction bundle |
-| `train_outputs/` | Trusted training execution bundle |
-| `analysis_outputs/` | Read-only project analysis plus research map, change map, eval contract, source inventory/support, improvement bank, idea cards, mapping, and resource plan |
-| `debug_outputs/` | Safe debug diagnosis and patch plan |
-| `sources/` | Free-first research lookup records with `sources/records/`, stable names, bounded provider resolution, repo-local extraction, and an auditable index |
-| `explore_outputs/` | Exploratory changeset, idea gate, experiment plan, experiment manifest, split static/runtime smoke reporting, ledger, and ranked run summary |
 
 ## 💬 Example Prompts
 
 **Trusted reproduction**
 
 ```text
-Use ai-paper-reproduction on this AI repo. Stay README-first, prefer documented inference or evaluation, avoid unnecessary repo changes, and write outputs to repro_outputs/.
+Use ai-research-reproduction on this AI repo. Stay README-first, prefer documented inference or evaluation, avoid unnecessary repo changes, and write outputs to repro_outputs/.
 ```
 
 **Current-research exploration**
 
 ```text
-Use research-explore on top of current_research improved-model@branch. Work on an isolated branch, coordinate code and run exploration together, try several variants, and rank candidates in explore_outputs/.
+Use ai-research-explore on top of current_research improved-model@branch. Work on an isolated branch, coordinate code and run exploration together, try several variants, and rank candidates in explore_outputs/.
 ```
 
 **Third-scenario campaign exploration**
 
 ```text
-Use research-explore with research_campaign.json. Treat the provided task family, dataset, evaluation source, and SOTA table as frozen inputs, rank the candidate ideas, keep each candidate single-variable, and write governed outputs to analysis_outputs/ and explore_outputs/.
+Use ai-research-explore with research_campaign.json. Treat the provided task family, dataset, evaluation source, and SOTA table as frozen inputs, rank the candidate ideas, keep each candidate single-variable, and write governed outputs to analysis_outputs/ and explore_outputs/.
 ```
 
 **Read-only analysis**
@@ -393,10 +368,17 @@ python scripts/test_analysis_output_rendering.py
 python scripts/test_safe_debug_output_rendering.py
 python scripts/test_explore_output_rendering.py
 python scripts/test_explore_variant_matrix.py
+python scripts/test_atomic_idea_decomposition.py
+python scripts/test_idea_seed_generation.py
+python scripts/test_implementation_fidelity.py
+python scripts/test_research_explore_contracts.py
 python scripts/test_research_explore_dry_run.py
 python scripts/test_research_explore_campaign_flow.py
 python scripts/test_research_explore_campaign_abandon.py
 python scripts/test_research_explore_campaign_checkpoint.py
+python scripts/test_research_explore_artifact_consistency.py
+python scripts/test_research_explore_variant_execution.py
+python scripts/test_research_explore_nontraining_execution.py
 python scripts/test_orchestrator_dry_run.py
 python scripts/test_training_lane_routing.py
 ```
@@ -425,17 +407,6 @@ python scripts/install_skills.py --client codex --target ./tmp/codex-skills --fo
 python scripts/install_skills.py --client claude --target ./tmp/claude-skills --force
 ```
 
-GitHub Actions validates this repository on `ubuntu-latest`, `macos-latest`, and `windows-latest`.
-
-## 📐 Routing Summary
-
-- Ambiguous requests go to the trusted lane.
-- Exploration requires explicit authorization.
-- Trusted skills must not auto-route into exploration.
-- Explore outputs must not claim trusted reproduction success.
-- Peer leaf skills should not call each other directly.
-- End-to-end orchestration should happen through the public orchestrator for the relevant task family.
-
 ## 📚 References
 
 - Skill registry: [references/skill-registry.json](references/skill-registry.json)
@@ -454,7 +425,8 @@ GitHub Actions validates this repository on `ubuntu-latest`, `macos-latest`, and
 - Trusted reproduction still avoids silent semantic changes.
 - Helper skills remain narrow and are not intended to become public catch-all entry points.
 - Exploratory work must stay isolated from trusted baselines.
+- `ai-research-explore` is a governed third-scenario orchestrator, not an open-ended autonomous research agent.
 
-## 🎯 Scope
+## 🧱 Scope
 
-This is a lane-aware deep learning research skill repository optimized for safety, observability, and reuse.
+This is a lane-aware deep learning research skill repository optimized for safety, observability, reuse, and auditable workflow boundaries.

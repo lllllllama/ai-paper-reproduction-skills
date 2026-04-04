@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Use this reference when preparing a `variant_spec.json` for `explore-run` or `research-explore`.
+Use this reference when preparing a `variant_spec.json` for `explore-run` or `ai-research-explore`.
 
-In the third scenario, `variant_spec` is the run-level section inside a larger `research_campaign.json` / `research_campaign.yaml`. See [skills/research-explore/references/research-campaign-spec.md](../skills/research-explore/references/research-campaign-spec.md).
+In the third scenario, `variant_spec` is the run-level section inside a larger `research_campaign.json` / `research_campaign.yaml`. See [skills/ai-research-explore/references/research-campaign-spec.md](../skills/ai-research-explore/references/research-campaign-spec.md).
 
 The spec describes:
 
@@ -154,3 +154,4 @@ Accepted `metric_goal` values include:
 - Keep exploratory output candidate-only.
 - Do not treat pre-execution ranking scores as trusted scientific conclusions.
 - If `primary_metric` is omitted, downstream ranking falls back to parsed `best_metric`.
+

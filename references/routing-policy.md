@@ -21,7 +21,7 @@ Trusted-lane skills are for:
 
 Current trusted public skills:
 
-- `ai-paper-reproduction`
+- `ai-research-reproduction`
 - `env-and-assets-bootstrap`
 - `minimal-run-and-audit`
 - `analyze-project`
@@ -48,7 +48,7 @@ Explore-lane skills are for:
 
 Current explore public skills:
 
-- `research-explore`
+- `ai-research-explore`
 - `explore-code`
 - `explore-run`
 
@@ -86,3 +86,4 @@ Current helper skills:
 - Exploration must not silently claim trusted reproduction success.
 - Peer leaf skills should not call each other directly.
 - End-to-end orchestration should happen through the public orchestrator skill for the relevant task family.
+

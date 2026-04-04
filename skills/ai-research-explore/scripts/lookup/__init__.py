@@ -1,4 +1,4 @@
-"""Internal lookup helpers for research-explore."""
+"""Internal lookup helpers for ai-research-explore."""
 
 from .cache_store import load_cache_index, store_records
 from .inventory_writer import write_source_inventory, write_sources_summary
@@ -17,3 +17,4 @@ __all__ = [
     "write_source_support",
     "write_sources_summary",
 ]
+

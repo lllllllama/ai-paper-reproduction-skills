@@ -15,9 +15,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from passes import (
+    run_atomic_idea_decomposition_pass,
+    run_candidate_idea_generation_pass,
     run_execution_feasibility_pass,
     run_idea_card_pass,
     run_idea_ranking_pass,
+    run_implementation_fidelity_pass,
     run_improvement_bank_pass,
     run_lookup_pass,
     run_source_mapping_pass,
@@ -35,6 +38,11 @@ DEFAULT_EXECUTION_POLICY = {
     "max_executed_variants": 1,
     "variant_timeout": 60,
     "run_full_after_short_run": False,
+}
+DEFAULT_IDEA_GENERATION_POLICY = {
+    "allow_synthesized_seed_ideas": True,
+    "max_generated_ideas": 3,
+    "require_diverse_targets": True,
 }
 
 
@@ -79,7 +87,7 @@ def slugify(value: str) -> str:
 def choose_experiment_branch(current_research: str, explicit_branch: str) -> str:
     if explicit_branch:
         return explicit_branch
-    return f"exp/research-explore-{slugify(current_research)}"
+    return f"exp/ai-research-explore-{slugify(current_research)}"
 
 
 def maybe_git_root(repo_path: Path) -> Optional[Path]:
@@ -91,7 +99,7 @@ def maybe_git_root(repo_path: Path) -> Optional[Path]:
 
 def build_context_id(current_research: str, experiment_branch: str) -> str:
     digest = hashlib.sha1(f"{current_research}::{experiment_branch}".encode("utf-8")).hexdigest()[:12]
-    return f"research-explore-{digest}"
+    return f"ai-research-explore-{digest}"
 
 
 def experiment_worktree_root(git_root: Path, experiment_branch: str) -> Path:
@@ -399,43 +407,60 @@ def normalize_execution_policy(raw: Any, args: argparse.Namespace) -> Dict[str, 
     }
 
 
-def synthesize_candidate_idea(variant_spec: Dict[str, Any]) -> Dict[str, Any]:
-    axes = list(sorted((variant_spec.get("variant_axes") or {}).keys()))
-    summary = (
-        f"Evaluate controlled variation across: {', '.join(axes)}."
-        if axes
-        else "Evaluate one controlled follow-up on top of the current research baseline."
-    )
-    return {
-        "id": "idea-001",
-        "summary": summary,
-        "change_scope": axes[0] if axes else "single-variable-followup",
-        "target_component": axes[0] if axes else "training-config",
-        "expected_upside": 0.7,
-        "implementation_risk": 0.35,
-        "eval_risk": 0.2,
-        "rollback_ease": 0.9,
-        "estimated_runtime_cost": 0.45,
-        "single_variable_fit": 0.9,
-        "hypothesis": summary,
-        "supporting_changes": ["Keep all non-target changes mechanical and reversible."],
-    }
+def stringify_campaign_binding(value: Any) -> str:
+    if isinstance(value, dict):
+        for key in ("name", "id", "path", "label"):
+            if value.get(key):
+                return str(value[key])
+        items = [f"{key}={value[key]}" for key in sorted(value) if value.get(key) not in {None, ""}]
+        return ", ".join(items) or "unspecified"
+    if isinstance(value, list):
+        return ", ".join(str(item) for item in value if str(item).strip()) or "unspecified"
+    text = str(value or "").strip()
+    return text or "unspecified"
 
 
-def normalize_candidate_ideas(raw: Any, variant_spec: Dict[str, Any]) -> List[Dict[str, Any]]:
+def evaluation_binding_text(evaluation_source: Dict[str, Any]) -> str:
+    command = str(evaluation_source.get("command") or "").strip()
+    path = str(evaluation_source.get("path") or "").strip()
+    metric = str(evaluation_source.get("primary_metric") or "").strip()
+    parts = []
+    if path:
+        parts.append(f"path={path}")
+    if command:
+        parts.append(f"command={command}")
+    if metric:
+        parts.append(f"metric={metric}")
+    return " | ".join(parts) or "unspecified"
+
+
+def normalize_candidate_ideas(
+    raw: Any,
+    variant_spec: Dict[str, Any],
+    *,
+    current_research: str,
+    task_family: str,
+    dataset: Any,
+    evaluation_source: Dict[str, Any],
+) -> List[Dict[str, Any]]:
     if not isinstance(raw, list) or not raw:
-        return [synthesize_candidate_idea(variant_spec)]
+        return []
 
+    dataset_binding = stringify_campaign_binding(dataset)
+    evaluation_binding = evaluation_binding_text(evaluation_source)
+    task_binding = str(task_family or "").strip() or "unspecified"
     normalized: List[Dict[str, Any]] = []
     for index, item in enumerate(raw, start=1):
         if not isinstance(item, dict):
             continue
+        change_scope = str(item.get("change_scope") or "unspecified")
+        target_component = str(item.get("target_component") or "unspecified")
         normalized.append(
             {
                 "id": str(item.get("id") or f"idea-{index:03d}"),
                 "summary": str(item.get("summary") or item.get("description") or f"Candidate idea {index}"),
-                "change_scope": str(item.get("change_scope") or "unspecified"),
-                "target_component": str(item.get("target_component") or "unspecified"),
+                "change_scope": change_scope,
+                "target_component": target_component,
                 "expected_upside": clamp_score(safe_float(item.get("expected_upside")), default=0.5),
                 "implementation_risk": clamp_score(safe_float(item.get("implementation_risk")), default=0.5),
                 "eval_risk": clamp_score(safe_float(item.get("eval_risk")), default=0.5),
@@ -444,9 +469,37 @@ def normalize_candidate_ideas(raw: Any, variant_spec: Dict[str, Any]) -> List[Di
                 "single_variable_fit": clamp_score(safe_float(item.get("single_variable_fit")), default=0.8),
                 "hypothesis": str(item.get("hypothesis") or item.get("summary") or ""),
                 "supporting_changes": list(item.get("supporting_changes", []) or []),
+                "seed_origin": "researcher",
+                "campaign_idea_id": str(item.get("id") or f"idea-{index:03d}"),
+                "source_support_hint": str(item.get("source_support_hint") or ""),
+                "feasibility_hint": str(item.get("feasibility_hint") or ""),
+                "selection_origin": "campaign",
+                "context_anchor": str(item.get("context_anchor") or current_research),
+                "task_family_binding": str(item.get("task_family_binding") or task_binding),
+                "dataset_binding": str(item.get("dataset_binding") or dataset_binding),
+                "evaluation_binding": str(item.get("evaluation_binding") or evaluation_binding),
+                "constraint_notes": list(item.get("constraint_notes", []) or [
+                    f"Anchor this candidate to current_research `{current_research}`.",
+                    f"Keep the candidate inside task family `{task_binding}` and dataset `{dataset_binding}`.",
+                    f"Preserve the frozen evaluation binding `{evaluation_binding}`.",
+                    f"Keep `{change_scope}` around `{target_component}` single-variable and reversible.",
+                ]),
             }
         )
-    return normalized or [synthesize_candidate_idea(variant_spec)]
+    return normalized
+
+
+def normalize_idea_generation(raw: Any) -> Dict[str, Any]:
+    policy = dict(DEFAULT_IDEA_GENERATION_POLICY)
+    if isinstance(raw, dict):
+        policy.update(raw)
+    try:
+        policy["max_generated_ideas"] = max(0, int(policy.get("max_generated_ideas", 3)))
+    except (TypeError, ValueError):
+        policy["max_generated_ideas"] = 3
+    policy["allow_synthesized_seed_ideas"] = bool(policy.get("allow_synthesized_seed_ideas", True))
+    policy["require_diverse_targets"] = bool(policy.get("require_diverse_targets", True))
+    return policy
 
 
 def normalize_campaign(args: argparse.Namespace) -> Tuple[Dict[str, Any], bool]:
@@ -471,9 +524,17 @@ def normalize_campaign(args: argparse.Namespace) -> Tuple[Dict[str, Any], bool]:
 
     evaluation_source = normalize_evaluation_source(raw_campaign.get("evaluation_source", {}), variant_spec)
     metric_goal = normalize_metric_goal(evaluation_source.get("metric_goal") or variant_spec.get("metric_goal"))
-    candidate_ideas = normalize_candidate_ideas(raw_campaign.get("candidate_ideas", []), variant_spec)
+    candidate_ideas = normalize_candidate_ideas(
+        raw_campaign.get("candidate_ideas", []),
+        variant_spec,
+        current_research=current_research,
+        task_family=str(raw_campaign.get("task_family") or ""),
+        dataset=raw_campaign.get("dataset"),
+        evaluation_source=evaluation_source,
+    )
     execution_policy = normalize_execution_policy(raw_campaign.get("execution_policy", {}), args)
     sota_reference = normalize_sota_reference(raw_campaign.get("sota_reference", []), evaluation_source.get("primary_metric"), metric_goal)
+    idea_generation = normalize_idea_generation(raw_campaign.get("idea_generation", {}))
 
     campaign = {
         "schema_version": "1.0",
@@ -485,12 +546,14 @@ def normalize_campaign(args: argparse.Namespace) -> Tuple[Dict[str, Any], bool]:
         "evaluation_source": evaluation_source,
         "sota_reference": sota_reference,
         "candidate_ideas": candidate_ideas,
+        "researcher_candidate_ideas": candidate_ideas,
         "compute_budget": normalize_compute_budget(raw_campaign.get("compute_budget", {})),
         "variant_spec": variant_spec,
         "baseline_gate": normalize_baseline_gate(raw_campaign.get("baseline_gate", {}), metric_goal),
         "execution_policy": execution_policy,
         "research_lookup": dict(raw_campaign.get("research_lookup", {})) if isinstance(raw_campaign.get("research_lookup"), dict) else {},
         "idea_policy": dict(raw_campaign.get("idea_policy", {})) if isinstance(raw_campaign.get("idea_policy"), dict) else {},
+        "idea_generation": idea_generation,
         "source_constraints": dict(raw_campaign.get("source_constraints", {})) if isinstance(raw_campaign.get("source_constraints"), dict) else {},
         "feasibility_policy": dict(raw_campaign.get("feasibility_policy", {})) if isinstance(raw_campaign.get("feasibility_policy"), dict) else {},
     }
@@ -747,6 +810,12 @@ def execute_variant_candidates(
                 "best_metric": payload.get("best_metric"),
                 "observed_metrics": payload.get("observed_metrics", {}),
                 "best_checkpoint": payload.get("best_checkpoint"),
+                "changed_files": payload.get("changed_files", []),
+                "new_files": payload.get("new_files", []),
+                "deleted_files": payload.get("deleted_files", []),
+                "touched_paths": payload.get("touched_paths", []),
+                "touched_symbols": payload.get("touched_symbols", []),
+                "evidence_capture": payload.get("evidence_capture", {}),
             }
         )
         stage_trace.append(
@@ -1115,6 +1184,21 @@ def merge_selected_idea_with_source_mapping(
     return merged
 
 
+def observed_changed_files_from_fidelity(implementation_fidelity: Dict[str, Any]) -> List[str]:
+    observed: List[str] = []
+    for unit in implementation_fidelity.get("fidelity_units", []) or []:
+        for site in unit.get("observed_implementation_sites", []) or unit.get("actual_observed_implementation_site", []):
+            text = str(site or "").strip()
+            if not text:
+                continue
+            _label, _sep, path = text.partition(":")
+            candidate = path or text
+            candidate = candidate.strip()
+            if candidate and candidate not in observed:
+                observed.append(candidate)
+    return observed
+
+
 def build_experiment_manifest(
     *,
     current_research: str,
@@ -1126,8 +1210,14 @@ def build_experiment_manifest(
     variant_matrix: Dict[str, Any],
     source_mapping: Optional[Dict[str, Any]] = None,
     feasibility_bundle: Optional[Dict[str, Any]] = None,
+    atomic_bundle: Optional[Dict[str, Any]] = None,
+    implementation_fidelity: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     mapping = source_mapping or {}
+    atomic = atomic_bundle or {}
+    fidelity = implementation_fidelity or {}
+    planned_changed_files = [item.get("file") for item in mapping.get("target_location_map", [])[:3] if item.get("file")]
+    observed_changed_files = observed_changed_files_from_fidelity(fidelity)
     if selected_idea is None:
         return {
             "status": "blocked",
@@ -1135,15 +1225,20 @@ def build_experiment_manifest(
             "idea_id": None,
             "hypothesis": "",
             "changed_files": [],
+            "planned_changed_files": [],
+            "observed_changed_files": [],
             "config_overrides": {},
             "dataset": campaign.get("dataset"),
             "eval_contract_ref": str((analysis_output_dir / "EVAL_CONTRACT.md").as_posix()),
             "improvement_bank_ref": str((analysis_output_dir / "IMPROVEMENT_BANK.md").as_posix()),
             "idea_cards_ref": str((analysis_output_dir / "IDEA_CARDS.json").as_posix()),
             "idea_scores_ref": str((analysis_output_dir / "IDEA_SCORES.json").as_posix()),
+            "idea_seeds_ref": str((analysis_output_dir / "IDEA_SEEDS.json").as_posix()),
             "module_candidates_ref": str((analysis_output_dir / "MODULE_CANDIDATES.md").as_posix()),
             "interface_diff_ref": str((analysis_output_dir / "INTERFACE_DIFF.md").as_posix()),
             "resource_plan_ref": str((analysis_output_dir / "RESOURCE_PLAN.md").as_posix()),
+            "atomic_idea_map_ref": str((analysis_output_dir / "ATOMIC_IDEA_MAP.json").as_posix()),
+            "implementation_fidelity_ref": str((analysis_output_dir / "IMPLEMENTATION_FIDELITY.json").as_posix()),
             "primary_metric": metric_policy.get("primary_metric"),
             "seed_policy": "inherit-baseline-seeds",
             "budget": campaign.get("compute_budget", {}),
@@ -1155,25 +1250,37 @@ def build_experiment_manifest(
             "minimal_patch_plan": mapping.get("minimal_patch_plan", []),
             "smoke_validation_plan": mapping.get("smoke_plan", []),
             "feasibility_summary": (feasibility_bundle or {}).get("feasibility", {}),
+            "atomic_idea_summary": {
+                "status": atomic.get("status", "blocked"),
+                "atomic_unit_count": atomic.get("atomic_unit_count", 0),
+            },
+            "implementation_fidelity_summary": fidelity.get("fidelity_summary", {}),
             "blockers": ["no-selected-idea"],
         }
     idea = selected_idea
     manifest_blockers = list(mapping.get("source_blockers", [])) if mapping.get("requires_source_triple") else []
+    manifest_blockers.extend(list(atomic.get("blockers", [])))
+    manifest_blockers = [item for item in manifest_blockers if item]
     return {
         "status": "blocked" if manifest_blockers else "ready",
         "parent_baseline": current_research,
         "idea_id": idea.get("id"),
         "hypothesis": idea.get("hypothesis") or idea.get("summary"),
-        "changed_files": [item.get("file") for item in mapping.get("target_location_map", [])[:3]],
+        "changed_files": observed_changed_files,
+        "planned_changed_files": planned_changed_files,
+        "observed_changed_files": observed_changed_files,
         "config_overrides": variant_matrix.get("variants", [{}])[0].get("axes", {}) if variant_matrix.get("variants") else {},
         "dataset": campaign.get("dataset"),
         "eval_contract_ref": str((analysis_output_dir / "EVAL_CONTRACT.md").as_posix()),
         "improvement_bank_ref": str((analysis_output_dir / "IMPROVEMENT_BANK.md").as_posix()),
         "idea_cards_ref": str((analysis_output_dir / "IDEA_CARDS.json").as_posix()),
         "idea_scores_ref": str((analysis_output_dir / "IDEA_SCORES.json").as_posix()),
+        "idea_seeds_ref": str((analysis_output_dir / "IDEA_SEEDS.json").as_posix()),
         "module_candidates_ref": str((analysis_output_dir / "MODULE_CANDIDATES.md").as_posix()),
         "interface_diff_ref": str((analysis_output_dir / "INTERFACE_DIFF.md").as_posix()),
         "resource_plan_ref": str((analysis_output_dir / "RESOURCE_PLAN.md").as_posix()),
+        "atomic_idea_map_ref": str((analysis_output_dir / "ATOMIC_IDEA_MAP.json").as_posix()),
+        "implementation_fidelity_ref": str((analysis_output_dir / "IMPLEMENTATION_FIDELITY.json").as_posix()),
         "primary_metric": metric_policy.get("primary_metric"),
         "seed_policy": "inherit-baseline-seeds",
         "budget": campaign.get("compute_budget", {}),
@@ -1185,6 +1292,11 @@ def build_experiment_manifest(
         "minimal_patch_plan": mapping.get("minimal_patch_plan", []),
         "smoke_validation_plan": mapping.get("smoke_plan", []),
         "feasibility_summary": (feasibility_bundle or {}).get("feasibility", {}),
+        "atomic_idea_summary": {
+            "status": atomic.get("status", "blocked"),
+            "atomic_unit_count": atomic.get("atomic_unit_count", 0),
+        },
+        "implementation_fidelity_summary": fidelity.get("fidelity_summary", {}),
         "blockers": manifest_blockers,
     }
 
@@ -1456,11 +1568,14 @@ def write_analysis_status(
     analysis_output_dir: Path,
     analysis_data: Dict[str, Any],
     lookup_bundle: Dict[str, Any],
+    idea_seed_bundle: Dict[str, Any],
     improvement_bank: Dict[str, Any],
     idea_cards: Dict[str, Any],
     idea_gate: Dict[str, Any],
     selected_idea: Optional[Dict[str, Any]],
     source_mapping: Dict[str, Any],
+    atomic_bundle: Dict[str, Any],
+    implementation_fidelity: Dict[str, Any],
     feasibility_bundle: Dict[str, Any],
 ) -> Path:
     outputs = {
@@ -1473,10 +1588,13 @@ def write_analysis_status(
         "source_support": "analysis_outputs/SOURCE_SUPPORT.json",
         "improvement_bank": "analysis_outputs/IMPROVEMENT_BANK.md",
         "idea_cards": "analysis_outputs/IDEA_CARDS.json",
+        "idea_seeds": "analysis_outputs/IDEA_SEEDS.json",
         "idea_evaluation": "analysis_outputs/IDEA_EVALUATION.md",
         "idea_scores": "analysis_outputs/IDEA_SCORES.json",
         "module_candidates": "analysis_outputs/MODULE_CANDIDATES.md",
         "interface_diff": "analysis_outputs/INTERFACE_DIFF.md",
+        "atomic_idea_map": "analysis_outputs/ATOMIC_IDEA_MAP.json",
+        "implementation_fidelity": "analysis_outputs/IMPLEMENTATION_FIDELITY.json",
         "resource_plan": "analysis_outputs/RESOURCE_PLAN.md",
     }
     existing_outputs = {
@@ -1525,13 +1643,28 @@ def write_analysis_status(
             "records_by_evidence_class": lookup_bundle.get("records_by_evidence_class", []),
             "repo_extracted_locators": lookup_bundle.get("repo_extracted_locators", []),
         },
+        "idea_seeds": {
+            "artifact_path": idea_seed_bundle.get("artifact_path"),
+            "generation_policy": idea_seed_bundle.get("generation_policy", {}),
+            "researcher_idea_count": len(idea_seed_bundle.get("researcher_ideas", [])),
+            "generated_idea_count": len(idea_seed_bundle.get("generated_ideas", [])),
+            "synthesized_idea_count": sum(1 for item in idea_seed_bundle.get("generated_ideas", []) if item.get("seed_origin") == "synthesized"),
+        },
         "idea_cards": idea_cards.get("cards", []),
         "idea_gate": idea_gate,
         "selected_idea": selected_idea,
+        "selected_idea_breakdown": idea_gate.get("selected_idea_breakdown", {}),
         "module_candidates": source_mapping.get("module_candidates", []),
         "selected_source_record": source_mapping.get("selected_source_record", {}),
         "interface_diff": source_mapping.get("interface_diff", {}),
         "minimal_patch_plan": source_mapping.get("minimal_patch_plan", []),
+        "atomic_idea_map": atomic_bundle,
+        "implementation_fidelity": implementation_fidelity,
+        "generated_idea_count": len(idea_seed_bundle.get("generated_ideas", [])),
+        "researcher_idea_count": len(idea_seed_bundle.get("researcher_ideas", [])),
+        "synthesized_idea_count": sum(1 for item in idea_seed_bundle.get("generated_ideas", []) if item.get("seed_origin") == "synthesized"),
+        "atomic_unit_count": atomic_bundle.get("atomic_unit_count", 0),
+        "fidelity_summary": implementation_fidelity.get("fidelity_summary", {}),
         "resource_plan": feasibility_bundle.get("feasibility", {}),
         "outputs": {
             **existing_outputs,
@@ -1558,10 +1691,13 @@ def build_context(
     analysis_data: Dict[str, Any],
     analysis_status_path: Optional[Path],
     lookup_bundle: Dict[str, Any],
+    idea_seed_bundle: Dict[str, Any],
     improvement_bank: Dict[str, Any],
     idea_cards: Dict[str, Any],
     code_plan: Dict[str, Any],
     source_mapping: Dict[str, Any],
+    atomic_bundle: Dict[str, Any],
+    implementation_fidelity: Dict[str, Any],
     feasibility_bundle: Dict[str, Any],
     variant_matrix: Dict[str, Any],
     metric_policy: Dict[str, Any],
@@ -1612,10 +1748,15 @@ def build_context(
             "source_support": str((analysis_output_dir / "SOURCE_SUPPORT.json")),
             "improvement_bank": str((analysis_output_dir / "IMPROVEMENT_BANK.md")),
             "idea_cards": str((analysis_output_dir / "IDEA_CARDS.json")),
+            "idea_seeds": str((analysis_output_dir / "IDEA_SEEDS.json")),
             "idea_evaluation": str((analysis_output_dir / "IDEA_EVALUATION.md")),
             "idea_scores": str((analysis_output_dir / "IDEA_SCORES.json")),
             "module_candidates": str((analysis_output_dir / "MODULE_CANDIDATES.md")),
             "interface_diff": str((analysis_output_dir / "INTERFACE_DIFF.md")),
+            "atomic_idea_map": str((analysis_output_dir / "ATOMIC_IDEA_MAP.json")),
+            "atomic_idea_map_markdown": str((analysis_output_dir / "ATOMIC_IDEA_MAP.md")),
+            "implementation_fidelity": str((analysis_output_dir / "IMPLEMENTATION_FIDELITY.json")),
+            "implementation_fidelity_markdown": str((analysis_output_dir / "IMPLEMENTATION_FIDELITY.md")),
             "resource_plan": str((analysis_output_dir / "RESOURCE_PLAN.md")),
         },
         "sources_dir": lookup_bundle.get("sources_dir"),
@@ -1636,8 +1777,17 @@ def build_context(
         "baseline_gate": baseline_gate,
         "idea_gate": idea_gate,
         "selected_idea": selected_idea,
+        "selected_idea_breakdown": idea_gate.get("selected_idea_breakdown", {}),
+        "idea_seeds": idea_seed_bundle,
+        "generated_idea_count": len(idea_seed_bundle.get("generated_ideas", [])),
+        "researcher_idea_count": len(idea_seed_bundle.get("researcher_ideas", [])),
+        "synthesized_idea_count": sum(1 for item in idea_seed_bundle.get("generated_ideas", []) if item.get("seed_origin") == "synthesized"),
         "idea_cards": idea_cards.get("cards", []),
         "improvement_bank": improvement_bank.get("items", []),
+        "atomic_idea_map": atomic_bundle,
+        "atomic_unit_count": atomic_bundle.get("atomic_unit_count", 0),
+        "implementation_fidelity": implementation_fidelity,
+        "fidelity_summary": implementation_fidelity.get("fidelity_summary", {}),
         "experiment_manifest": experiment_manifest,
         "experiment_ledger": experiment_ledger,
         "short_run_gate": short_run_gate_payload,
@@ -1757,8 +1907,8 @@ def main() -> int:
     workspace_repo_path = Path(workspace_info["workspace_root"]).resolve()
 
     helper_stage_trace = [
-        build_stage_trace_entry("validate-current-research", "research-explore/validate_current_research", f"Validated durable current research `{current_research}` as `{durable_current_research['kind']}`."),
-        build_stage_trace_entry("workspace", "research-explore/ensure_experiment_workspace", f"{'Created' if workspace_info['created_branch'] else 'Validated'} isolated {workspace_info['mode']} for branch `{experiment_branch}` at `{workspace_info['workspace_root']}`."),
+        build_stage_trace_entry("validate-current-research", "ai-research-explore/validate_current_research", f"Validated durable current research `{current_research}` as `{durable_current_research['kind']}`."),
+        build_stage_trace_entry("workspace", "ai-research-explore/ensure_experiment_workspace", f"{'Created' if workspace_info['created_branch'] else 'Validated'} isolated {workspace_info['mode']} for branch `{experiment_branch}` at `{workspace_info['workspace_root']}`."),
     ]
 
     scan_data = run_json(scan_script, ["--repo", str(workspace_repo_path), "--json"])
@@ -1812,7 +1962,7 @@ def main() -> int:
             campaign.get("sota_reference", []),
             campaign["baseline_gate"],
         )
-        helper_stage_trace.append(build_stage_trace_entry("baseline-gate", "research-explore/run_baseline_gate", f"Baseline gate decision: `{baseline_gate.get('decision', 'not-applicable')}`."))
+        helper_stage_trace.append(build_stage_trace_entry("baseline-gate", "ai-research-explore/run_baseline_gate", f"Baseline gate decision: `{baseline_gate.get('decision', 'not-applicable')}`."))
 
     lookup_bundle = run_lookup_pass(
         sources_dir=sources_dir,
@@ -1822,8 +1972,9 @@ def main() -> int:
         analysis_data=analysis_data,
         code_plan=initial_code_plan,
     )
-    helper_stage_trace.append(build_stage_trace_entry("research-lookup", "research-explore/passes/lookup_sources.py", f"Cached {len(lookup_bundle.get('records', []))} source lookup records into `{lookup_bundle.get('sources_dir', sources_dir)}`."))
+    helper_stage_trace.append(build_stage_trace_entry("research-lookup", "ai-research-explore/passes/lookup_sources.py", f"Cached {len(lookup_bundle.get('records', []))} source lookup records into `{lookup_bundle.get('sources_dir', sources_dir)}`."))
 
+    researcher_candidate_ideas = list(campaign.get("researcher_candidate_ideas", []))
     improvement_bank = run_improvement_bank_pass(
         analysis_output_dir=analysis_output_dir,
         campaign=campaign,
@@ -1831,68 +1982,62 @@ def main() -> int:
         code_plan=initial_code_plan,
         lookup_bundle=lookup_bundle,
         baseline_gate=baseline_gate,
+        candidate_ideas=researcher_candidate_ideas,
     )
-    helper_stage_trace.append(build_stage_trace_entry("improvement-bank", "research-explore/passes/improvement_bank.py", f"Built {len(improvement_bank.get('items', []))} bounded improvements."))
+    helper_stage_trace.append(build_stage_trace_entry("improvement-bank-researcher", "ai-research-explore/passes/improvement_bank.py", f"Built {len(improvement_bank.get('items', []))} researcher-anchored improvements."))
+
+    idea_seed_bundle = run_candidate_idea_generation_pass(
+        analysis_output_dir=analysis_output_dir,
+        current_research=current_research,
+        task_family=campaign.get("task_family") or "",
+        dataset=campaign.get("dataset"),
+        evaluation_source=campaign.get("evaluation_source", {}),
+        variant_spec=variant_spec,
+        analysis_data=analysis_data,
+        improvement_bank=improvement_bank,
+        researcher_candidate_ideas=researcher_candidate_ideas,
+        idea_generation=campaign.get("idea_generation", {}),
+    )
+    helper_stage_trace.append(build_stage_trace_entry("idea-generation", "ai-research-explore/passes/candidate_idea_generation.py", f"Preserved {len(idea_seed_bundle.get('researcher_ideas', []))} researcher ideas and generated {len(idea_seed_bundle.get('generated_ideas', []))} bounded seed ideas."))
+
+    merged_candidate_ideas = list(idea_seed_bundle.get("all_seed_ideas", []))
+    campaign["all_candidate_ideas"] = merged_candidate_ideas
+    improvement_bank = run_improvement_bank_pass(
+        analysis_output_dir=analysis_output_dir,
+        campaign=campaign,
+        analysis_data=analysis_data,
+        code_plan=initial_code_plan,
+        lookup_bundle=lookup_bundle,
+        baseline_gate=baseline_gate,
+        candidate_ideas=merged_candidate_ideas,
+    )
+    helper_stage_trace.append(build_stage_trace_entry("improvement-bank", "ai-research-explore/passes/improvement_bank.py", f"Rebuilt {len(improvement_bank.get('items', []))} bounded improvements across the merged idea pool."))
 
     idea_cards = run_idea_card_pass(
         analysis_output_dir=analysis_output_dir,
         improvement_items=improvement_bank.get("items", []),
     )
-    helper_stage_trace.append(build_stage_trace_entry("hypothesis-cards", "research-explore/passes/idea_cards.py", f"Materialized {len(idea_cards.get('cards', []))} hypothesis cards."))
+    helper_stage_trace.append(build_stage_trace_entry("hypothesis-cards", "ai-research-explore/passes/idea_cards.py", f"Materialized {len(idea_cards.get('cards', []))} hypothesis cards."))
 
-    seed_idea_gate = run_idea_ranking_pass(
-        analysis_output_dir=analysis_output_dir,
-        cards=idea_cards.get("cards", []),
-        baseline_gate=baseline_gate,
-    )
-    selected_idea = seed_idea_gate.get("selected_idea")
-    helper_stage_trace.append(build_stage_trace_entry("idea-gate-seed", "research-explore/passes/idea_ranking.py", f"Seed-ranked {len(seed_idea_gate.get('ranked_ideas', []))} idea cards and selected `{(selected_idea or {}).get('id', 'none')}`."))
-
-    if selected_idea is not None:
-        code_plan = run_code_plan_pass(
-            code_planner_script=code_planner_script,
-            workspace_repo_path=workspace_repo_path,
-            current_research=current_research,
-            experiment_branch=experiment_branch,
-            task_family=campaign.get("task_family") or "",
-            variant_spec=variant_spec,
-            selected_idea=selected_idea,
-            analysis_data=analysis_data or None,
-        )
-        helper_stage_trace.append(build_stage_trace_entry("code-plan", "explore-code/scripts/plan_code_changes.py", f"Prepared {len(code_plan.get('candidate_edit_targets', []))} candidate edit targets for the selected idea."))
-
-        source_mapping = run_source_mapping_pass(
-            analysis_output_dir=analysis_output_dir,
-            selected_idea=selected_idea,
-            analysis_data=analysis_data,
-            code_plan=code_plan,
-            lookup_bundle=lookup_bundle,
-            variant_matrix=variant_matrix,
-        )
-        selected_idea = merge_selected_idea_with_source_mapping(selected_idea, source_mapping)
-        helper_stage_trace.append(build_stage_trace_entry("source-mapping", "research-explore/passes/source_mapping.py", f"Mapped {len(source_mapping.get('target_location_map', []))} target locations and {len(source_mapping.get('module_candidates', []))} module candidates."))
-    else:
-        code_plan = initial_code_plan
-        source_mapping = {
-            "schema_version": "1.0",
-            "artifact_paths": [],
-            "selected_source_record": {},
-            "transplant_ready": False,
-            "source_blockers": [],
-            "target_location_map": [],
-            "supporting_changes": code_plan.get("supporting_changes", []),
-            "patch_surface_summary": code_plan.get("patch_surface_summary", {}),
-            "module_candidates": [],
-            "interface_diff": {},
-            "minimal_patch_plan": [],
-            "smoke_plan": [],
-            "requested_patch_class": "",
-            "resolved_patch_class": "config-only",
-            "patch_class_source": "source-mapping",
-            "requires_source_triple": False,
-        }
-        helper_stage_trace.append(build_stage_trace_entry("source-mapping", "research-explore/passes/source_mapping.py", "Skipped source mapping because no idea passed the idea gate.", status="blocked"))
-
+    source_mapping = {
+        "schema_version": "1.0",
+        "artifact_paths": [],
+        "selected_source_record": {},
+        "transplant_ready": False,
+        "source_blockers": [],
+        "target_location_map": [],
+        "supporting_changes": initial_code_plan.get("supporting_changes", []),
+        "patch_surface_summary": initial_code_plan.get("patch_surface_summary", {}),
+        "module_candidates": [],
+        "interface_diff": {},
+        "minimal_patch_plan": [],
+        "smoke_plan": [],
+        "requested_patch_class": "",
+        "resolved_patch_class": "config-only",
+        "patch_class_source": "source-mapping",
+        "requires_source_triple": False,
+    }
+    code_plan = initial_code_plan
     feasibility_bundle = run_execution_feasibility_pass(
         analysis_output_dir=analysis_output_dir,
         repo_path=workspace_repo_path,
@@ -1902,7 +2047,7 @@ def main() -> int:
         source_mapping=source_mapping,
         executed_runs=[],
     )
-    helper_stage_trace.append(build_stage_trace_entry("execution-feasibility", "research-explore/passes/execution_feasibility.py", f"Short-run feasibility: `{feasibility_bundle.get('feasibility', {}).get('short_run_feasibility', 'unknown')}`."))
+    helper_stage_trace.append(build_stage_trace_entry("execution-feasibility", "ai-research-explore/passes/execution_feasibility.py", f"Short-run feasibility: `{feasibility_bundle.get('feasibility', {}).get('short_run_feasibility', 'unknown')}`."))
 
     idea_cards["cards"] = enrich_cards_with_feasibility(idea_cards.get("cards", []), feasibility_bundle)
     idea_gate = run_idea_ranking_pass(
@@ -1911,17 +2056,7 @@ def main() -> int:
         baseline_gate=baseline_gate,
     )
     selected_idea = idea_gate.get("selected_idea")
-    helper_stage_trace.append(build_stage_trace_entry("idea-gate", "research-explore/passes/idea_ranking.py", f"Re-ranked {len(idea_gate.get('ranked_ideas', []))} idea cards after feasibility injection and selected `{(selected_idea or {}).get('id', 'none')}`."))
-
-    checkpoint_state, checkpoint_reasons = human_checkpoint_state(
-        compatibility_mode=compatibility_mode,
-        eval_contract_complete=eval_contract_complete(eval_contract),
-        baseline_gate=baseline_gate,
-        idea_gate=idea_gate,
-    )
-    if not compatibility_mode and selected_idea is None:
-        checkpoint_reasons = [*checkpoint_reasons, "no-selected-idea"]
-        checkpoint_state = "no-selected-idea" if len(checkpoint_reasons) == 1 else "multiple-reasons"
+    helper_stage_trace.append(build_stage_trace_entry("idea-gate", "ai-research-explore/passes/idea_ranking.py", f"Ranked {len(idea_gate.get('ranked_ideas', []))} idea cards with active selection pool `{idea_gate.get('active_selection_pool', 'all-eligible')}` and selected `{(selected_idea or {}).get('id', 'none')}`."))
 
     if selected_idea is not None:
         code_plan = run_code_plan_pass(
@@ -1934,7 +2069,7 @@ def main() -> int:
             selected_idea=selected_idea,
             analysis_data=analysis_data or None,
         )
-        helper_stage_trace.append(build_stage_trace_entry("code-plan-final", "explore-code/scripts/plan_code_changes.py", f"Refreshed {len(code_plan.get('candidate_edit_targets', []))} candidate edit targets after final idea selection."))
+        helper_stage_trace.append(build_stage_trace_entry("code-plan-final", "explore-code/scripts/plan_code_changes.py", f"Prepared {len(code_plan.get('candidate_edit_targets', []))} candidate edit targets for the final selected idea."))
 
         source_mapping = run_source_mapping_pass(
             analysis_output_dir=analysis_output_dir,
@@ -1946,18 +2081,83 @@ def main() -> int:
         )
         selected_idea = merge_selected_idea_with_source_mapping(selected_idea, source_mapping)
         idea_gate["selected_idea"] = selected_idea
-        helper_stage_trace.append(build_stage_trace_entry("source-mapping-final", "research-explore/passes/source_mapping.py", f"Canonical source mapping uses {len(source_mapping.get('target_location_map', []))} target locations and transplant_ready=`{source_mapping.get('transplant_ready', False)}`."))
+        helper_stage_trace.append(build_stage_trace_entry("source-mapping-final", "ai-research-explore/passes/source_mapping.py", f"Canonical source mapping uses {len(source_mapping.get('target_location_map', []))} target locations and transplant_ready=`{source_mapping.get('transplant_ready', False)}`."))
+        atomic_bundle = run_atomic_idea_decomposition_pass(
+            analysis_output_dir=analysis_output_dir,
+            selected_idea=selected_idea,
+            analysis_data=analysis_data,
+            source_mapping=source_mapping,
+            lookup_bundle=lookup_bundle,
+            current_research=current_research,
+            variant_spec=variant_spec,
+        )
+        helper_stage_trace.append(build_stage_trace_entry("atomic-decomposition", "ai-research-explore/passes/atomic_idea_decomposition.py", f"Atomic idea map status: `{atomic_bundle.get('status', 'blocked')}` with `{atomic_bundle.get('atomic_unit_count', 0)}` units."))
+    else:
+        helper_stage_trace.append(build_stage_trace_entry("source-mapping-final", "ai-research-explore/passes/source_mapping.py", "Skipped source mapping because no idea passed the idea gate.", status="blocked"))
+        atomic_bundle = {
+            "schema_version": "1.0",
+            "status": "blocked",
+            "selected_idea_id": None,
+            "atomic_units": [],
+            "atomic_unit_count": 0,
+            "blockers": ["no-selected-idea"],
+            "artifact_paths": [],
+            "artifact_path": str((analysis_output_dir / "ATOMIC_IDEA_MAP.json")),
+        }
+        (analysis_output_dir / "ATOMIC_IDEA_MAP.json").write_text(json.dumps({k: v for k, v in atomic_bundle.items() if k not in {"artifact_paths", "artifact_path"}}, indent=2, ensure_ascii=False), encoding="utf-8")
+        (analysis_output_dir / "ATOMIC_IDEA_MAP.md").write_text("# Atomic Idea Map\n\n- Status: `blocked`\n- Selected idea: `none`\n\n## Blockers\n\n- no-selected-idea\n", encoding="utf-8")
+        helper_stage_trace.append(build_stage_trace_entry("atomic-decomposition", "ai-research-explore/passes/atomic_idea_decomposition.py", "Atomic decomposition was blocked because no idea passed the gate.", status="blocked"))
 
+    if selected_idea is not None:
+        pre_execution_fidelity = run_implementation_fidelity_pass(
+            analysis_output_dir=analysis_output_dir,
+            selected_idea=selected_idea,
+            atomic_bundle=atomic_bundle,
+            source_mapping=source_mapping,
+            code_plan=code_plan,
+            experiment_manifest={},
+            executed_runs=[],
+            phase="pre-execution",
+        )
+        helper_stage_trace.append(build_stage_trace_entry("implementation-fidelity-pre", "ai-research-explore/passes/implementation_fidelity.py", f"Pre-execution fidelity summary: `{pre_execution_fidelity.get('fidelity_summary', {}).get('states', {})}`."))
+    else:
+        pre_execution_fidelity = {
+            "schema_version": "1.0",
+            "status": "blocked",
+            "phase": "pre-execution",
+            "selected_idea_id": None,
+            "fidelity_units": [],
+            "fidelity_summary": {
+                "unit_count": 0,
+                "states": {"not-started": 0},
+                "verification_levels": {"not_checked": 0},
+                "verification_modes": {"not_checked": 0},
+            },
+            "blockers": ["no-selected-idea"],
+            "artifact_paths": [str((analysis_output_dir / "IMPLEMENTATION_FIDELITY.md")), str((analysis_output_dir / "IMPLEMENTATION_FIDELITY.json"))],
+            "artifact_path": str((analysis_output_dir / "IMPLEMENTATION_FIDELITY.json")),
+        }
+        (analysis_output_dir / "IMPLEMENTATION_FIDELITY.json").write_text(json.dumps({k: v for k, v in pre_execution_fidelity.items() if k not in {"artifact_paths", "artifact_path"}}, indent=2, ensure_ascii=False), encoding="utf-8")
+        (analysis_output_dir / "IMPLEMENTATION_FIDELITY.md").write_text("# Implementation Fidelity\n\n- Status: `blocked`\n- Phase: `pre-execution`\n- Selected idea: `none`\n\n## Summary\n\n- Atomic unit count: `0`\n- States: `{'not-started': 0}`\n- Verification levels: `{'not_checked': 0}`\n", encoding="utf-8")
+
+    checkpoint_state, checkpoint_reasons = human_checkpoint_state(
+        compatibility_mode=compatibility_mode,
+        eval_contract_complete=eval_contract_complete(eval_contract),
+        baseline_gate=baseline_gate,
+        idea_gate=idea_gate,
+    )
+    if not compatibility_mode and selected_idea is None:
+        checkpoint_reasons = [*checkpoint_reasons, "no-selected-idea"]
+        checkpoint_state = "no-selected-idea" if len(checkpoint_reasons) == 1 else "multiple-reasons"
     if not compatibility_mode and feasibility_bundle.get("feasibility", {}).get("short_run_feasibility") == "blocked":
         checkpoint_reasons = [*checkpoint_reasons, "short-run-feasibility-blocked"]
-        checkpoint_state = (
-            "short-run-feasibility-blocked"
-            if len(checkpoint_reasons) == 1
-            else "multiple-reasons"
-        )
+        checkpoint_state = "short-run-feasibility-blocked" if len(checkpoint_reasons) == 1 else "multiple-reasons"
     if not compatibility_mode and selected_idea is not None and source_mapping.get("requires_source_triple") and source_mapping.get("source_blockers"):
         checkpoint_reasons = [*checkpoint_reasons, *source_mapping.get("source_blockers", [])]
         checkpoint_state = source_mapping["source_blockers"][0] if len(checkpoint_reasons) == 1 else "multiple-reasons"
+    if not compatibility_mode and atomic_bundle.get("status") == "blocked" and atomic_bundle.get("blockers"):
+        checkpoint_reasons = [*checkpoint_reasons, *atomic_bundle.get("blockers", [])]
+        checkpoint_state = "atomic-decomposition-blocked" if len(checkpoint_reasons) == 1 else "multiple-reasons"
 
     experiment_manifest = build_experiment_manifest(
         current_research=current_research,
@@ -1969,6 +2169,8 @@ def main() -> int:
         variant_matrix=variant_matrix,
         source_mapping=source_mapping,
         feasibility_bundle=feasibility_bundle,
+        atomic_bundle=atomic_bundle,
+        implementation_fidelity=pre_execution_fidelity,
     )
     config_diff_summary = build_config_diff_summary(selected_idea, variant_matrix)
 
@@ -1986,6 +2188,8 @@ def main() -> int:
     if not compatibility_mode and baseline_gate.get("decision") == "abandon":
         should_run_variants = False
     if not compatibility_mode and checkpoint_state != "not-required":
+        should_run_variants = False
+    if experiment_manifest.get("status") == "blocked":
         should_run_variants = False
 
     if should_run_variants:
@@ -2014,7 +2218,7 @@ def main() -> int:
         source_mapping=source_mapping,
         executed_runs=executed_runs,
     )
-    helper_stage_trace.append(build_stage_trace_entry("smoke-validation", "research-explore/passes/execution_feasibility.py", f"Smoke report status: `{feasibility_bundle.get('smoke_report', {}).get('status', 'unknown')}`."))
+    helper_stage_trace.append(build_stage_trace_entry("smoke-validation", "ai-research-explore/passes/execution_feasibility.py", f"Smoke report status: `{feasibility_bundle.get('smoke_report', {}).get('status', 'unknown')}`."))
 
     short_run_gate_payload = short_run_gate(executed_runs, eval_contract_complete(eval_contract), selected_idea)
     if short_run_gate_payload["status"] != "failed" and feasibility_bundle.get("feasibility", {}).get("short_run_feasibility") == "blocked":
@@ -2022,9 +2226,38 @@ def main() -> int:
             "status": "failed",
             "reason": "Execution feasibility blocked the short-run path before broader candidate execution.",
         }
-    helper_stage_trace.append(build_stage_trace_entry("short-run-gate", "research-explore/short_run_gate", f"Short-run gate status: `{short_run_gate_payload['status']}`."))
+    helper_stage_trace.append(build_stage_trace_entry("short-run-gate", "ai-research-explore/short_run_gate", f"Short-run gate status: `{short_run_gate_payload['status']}`."))
     if campaign["execution_policy"].get("run_full_after_short_run"):
-        helper_stage_trace.append(build_stage_trace_entry("full-run", "research-explore/full_run_governor", "Full-run execution is configured but remains conservative; this implementation records the intent and stops after the short-run gate.", status="planned"))
+        helper_stage_trace.append(build_stage_trace_entry("full-run", "ai-research-explore/full_run_governor", "Full-run execution is configured but remains conservative; this implementation records the intent and stops after the short-run gate.", status="planned"))
+
+    if selected_idea is not None:
+        implementation_fidelity = run_implementation_fidelity_pass(
+            analysis_output_dir=analysis_output_dir,
+            selected_idea=selected_idea,
+            atomic_bundle=atomic_bundle,
+            source_mapping=source_mapping,
+            code_plan=code_plan,
+            experiment_manifest=experiment_manifest,
+            executed_runs=executed_runs,
+            phase="post-execution" if executed_runs else "pre-execution",
+        )
+        helper_stage_trace.append(build_stage_trace_entry("implementation-fidelity-post", "ai-research-explore/passes/implementation_fidelity.py", f"Final fidelity summary: `{implementation_fidelity.get('fidelity_summary', {}).get('states', {})}`."))
+    else:
+        implementation_fidelity = pre_execution_fidelity
+
+    experiment_manifest = build_experiment_manifest(
+        current_research=current_research,
+        selected_idea=selected_idea,
+        code_plan=code_plan,
+        campaign=campaign,
+        metric_policy=metric_policy,
+        analysis_output_dir=analysis_output_dir,
+        variant_matrix=variant_matrix,
+        source_mapping=source_mapping,
+        feasibility_bundle=feasibility_bundle,
+        atomic_bundle=atomic_bundle,
+        implementation_fidelity=implementation_fidelity,
+    )
 
     experiment_ledger = build_experiment_ledger(
         baseline_gate=baseline_gate,
@@ -2037,15 +2270,18 @@ def main() -> int:
         analysis_output_dir=analysis_output_dir,
         analysis_data=analysis_data,
         lookup_bundle=lookup_bundle,
+        idea_seed_bundle=idea_seed_bundle,
         improvement_bank=improvement_bank,
         idea_cards=idea_cards,
         idea_gate=idea_gate,
         selected_idea=selected_idea,
         source_mapping=source_mapping,
+        atomic_bundle=atomic_bundle,
+        implementation_fidelity=implementation_fidelity,
         feasibility_bundle=feasibility_bundle,
     )
 
-    helper_stage_trace.append(build_stage_trace_entry("bundle-write", "research-explore/scripts/write_outputs.py", f"Writing the exploratory output bundle into `{output_dir}`."))
+    helper_stage_trace.append(build_stage_trace_entry("bundle-write", "ai-research-explore/scripts/write_outputs.py", f"Writing the exploratory output bundle into `{output_dir}`."))
     context = build_context(
         repo_path=repo_path,
         analysis_output_dir=analysis_output_dir,
@@ -2060,10 +2296,13 @@ def main() -> int:
         analysis_data=analysis_data,
         analysis_status_path=analysis_status_path,
         lookup_bundle=lookup_bundle,
+        idea_seed_bundle=idea_seed_bundle,
         improvement_bank=improvement_bank,
         idea_cards=idea_cards,
         code_plan=code_plan,
         source_mapping=source_mapping,
+        atomic_bundle=atomic_bundle,
+        implementation_fidelity=implementation_fidelity,
         feasibility_bundle=feasibility_bundle,
         variant_matrix=variant_matrix,
         metric_policy=metric_policy,
@@ -2097,6 +2336,15 @@ def main() -> int:
         "baseline_gate": baseline_gate,
         "idea_gate": idea_gate,
         "selected_idea": selected_idea,
+        "selected_idea_breakdown": context.get("selected_idea_breakdown", {}),
+        "idea_seeds": context.get("idea_seeds", {}),
+        "generated_idea_count": context.get("generated_idea_count", 0),
+        "researcher_idea_count": context.get("researcher_idea_count", 0),
+        "synthesized_idea_count": context.get("synthesized_idea_count", 0),
+        "atomic_idea_map": context.get("atomic_idea_map", {}),
+        "atomic_unit_count": context.get("atomic_unit_count", 0),
+        "implementation_fidelity": context.get("implementation_fidelity", {}),
+        "fidelity_summary": context.get("fidelity_summary", {}),
         "experiment_manifest": experiment_manifest,
         "experiment_ledger": experiment_ledger,
         "short_run_gate": short_run_gate_payload,
@@ -2143,3 +2391,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

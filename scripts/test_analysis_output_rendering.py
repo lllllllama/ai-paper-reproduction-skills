@@ -91,9 +91,11 @@ def main() -> int:
         assert_no_generated_outputs(status["entrypoints"]["train"], "status.entrypoints.train")
         assert_no_generated_outputs(status["task_relevant_files"], "status.task_relevant_files")
         assert_no_generated_outputs(status["research_map"]["task_relevant_files"], "status.research_map.task_relevant_files")
+        if "idea_seeds" in status or "implementation_fidelity" in status:
+            raise AssertionError("analyze-project status should not be polluted with ai-research-explore-only fields")
 
         print("ok: True")
-        print("checks: 14")
+        print("checks: 15")
         print("failures: 0")
         return 0
     finally:
@@ -103,3 +105,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

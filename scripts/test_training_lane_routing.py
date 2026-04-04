@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Regression checks for trusted vs explore training routing."""
 
 from __future__ import annotations
@@ -97,7 +97,7 @@ def run_case(orchestrator: Path, sample_repo: Path, temp_root: Path, lane: str) 
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    orchestrator = repo_root / "skills" / "ai-paper-reproduction" / "scripts" / "orchestrate_repro.py"
+    orchestrator = repo_root / "skills" / "ai-research-reproduction" / "scripts" / "orchestrate_repro.py"
 
     temp_root = Path(tempfile.mkdtemp(prefix="codex-training-lanes-", dir=repo_root))
     try:
@@ -119,3 +119,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

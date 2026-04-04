@@ -7,8 +7,8 @@ from pathlib import Path
 
 
 EXPECTED_COMMANDS = {
-    "ai-paper-reproduction": "skills/ai-paper-reproduction/SKILL.md",
-    "research-explore": "skills/research-explore/SKILL.md",
+    "ai-research-reproduction": "skills/ai-research-reproduction/SKILL.md",
+    "ai-research-explore": "skills/ai-research-explore/SKILL.md",
     "analyze-project": "skills/analyze-project/SKILL.md",
     "safe-debug": "skills/safe-debug/SKILL.md",
 }
@@ -63,3 +63,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

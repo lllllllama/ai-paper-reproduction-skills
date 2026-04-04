@@ -8,7 +8,7 @@ Proposed design only. This document does not change the current public skill set
 
 The repository already has a clear trusted-lane main orchestrator:
 
-- `ai-paper-reproduction` for end-to-end README-first trustworthy reproduction
+- `ai-research-reproduction` for end-to-end README-first trustworthy reproduction
 
 It also has two explore-lane public skills:
 
@@ -28,7 +28,7 @@ Add one new public explore-lane orchestrator skill for explicit exploratory iter
 
 Recommended name:
 
-- `research-explore`
+- `ai-research-explore`
 
 Why this name:
 
@@ -39,7 +39,7 @@ Why this name:
 
 ## Scope
 
-`research-explore` should be the end-to-end entrypoint when the researcher wants AI to explore on top of `current_research`.
+`ai-research-explore` should be the end-to-end entrypoint when the researcher wants AI to explore on top of `current_research`.
 
 `current_research` may be:
 
@@ -51,7 +51,7 @@ The orchestrator should treat `current_research` as the comparison anchor for ex
 
 ## Primary Use Cases
 
-Use `research-explore` when the request looks like:
+Use `ai-research-explore` when the request looks like:
 
 - "On top of this reproduced model, try several adapter variants on an isolated branch."
 - "Use this improved model as `current_research` and explore a few low-cost candidate ideas."
@@ -60,9 +60,9 @@ Use `research-explore` when the request looks like:
 
 ## Non-Goals
 
-`research-explore` should not:
+`ai-research-explore` should not:
 
-- replace `ai-paper-reproduction`
+- replace `ai-research-reproduction`
 - silently convert trusted reproduction into exploration
 - act as a generic idea generator without a clear `current_research`
 - become a default route for ambiguous "improve this" prompts
@@ -72,9 +72,9 @@ Use `research-explore` when the request looks like:
 
 The repository should then have two orchestrators for two different end-to-end task families:
 
-- `ai-paper-reproduction`
+- `ai-research-reproduction`
   - trusted-lane orchestrator for README-first reproduction
-- `research-explore`
+- `ai-research-explore`
   - explore-lane orchestrator for explicit exploration on top of the current experimental foundation
 
 This does not violate the "one main orchestrator" rule.
@@ -86,7 +86,7 @@ The rule should be interpreted as:
 
 ## Trigger Boundary
 
-`research-explore` should trigger only when both conditions hold:
+`ai-research-explore` should trigger only when both conditions hold:
 
 1. the user explicitly authorizes exploration
 2. the request implies multi-step exploratory iteration rather than a narrow code-only or run-only task
@@ -119,13 +119,13 @@ Expected exclusion signals:
 
 ## Relationship To Existing Skills
 
-`research-explore` should orchestrate, not replace, the current explore-lane leaf skills.
+`ai-research-explore` should orchestrate, not replace, the current explore-lane leaf skills.
 
 Recommended relationship:
 
 - keep `explore-code` public for narrow explicit code-adaptation requests
 - keep `explore-run` public for narrow explicit run-planning and run-ranking requests
-- add `research-explore` as the only explore-lane end-to-end orchestrator
+- add `ai-research-explore` as the only explore-lane end-to-end orchestrator
 
 This mirrors the trusted lane structure:
 
@@ -143,7 +143,7 @@ Those are legitimate direct asks. Keep them public unless real routing data show
 
 ## Call Graph
 
-`research-explore` should be allowed to call only repository-local skills.
+`ai-research-explore` should be allowed to call only repository-local skills.
 
 Recommended `can_call` list:
 
@@ -168,7 +168,7 @@ Rationale:
 
 ## Dependency Policy
 
-`research-explore` must not hard-depend on skills that are not bundled in this repository.
+`ai-research-explore` must not hard-depend on skills that are not bundled in this repository.
 
 Rules:
 
@@ -204,7 +204,7 @@ Recommended high-level workflow:
 
 ## Output Contract
 
-To minimize churn, `research-explore` should initially reuse the established explore output shape:
+To minimize churn, `ai-research-explore` should initially reuse the established explore output shape:
 
 ```text
 explore_outputs/
@@ -243,8 +243,8 @@ If the user gives only vague wording such as "the current model", the orchestrat
 
 The handoff boundary should be strict:
 
-- `ai-paper-reproduction` must never auto-route into `research-explore`
-- `research-explore` must never present outcomes as trusted reproduction success
+- `ai-research-reproduction` must never auto-route into `ai-research-explore`
+- `ai-research-explore` must never present outcomes as trusted reproduction success
 - trusted outputs stay in `repro_outputs/` and `train_outputs/`
 - exploratory outcomes stay in `explore_outputs/`
 
@@ -252,17 +252,17 @@ The researcher may manually move from trusted to explore, but that handoff must 
 
 ## Prompt Examples
 
-Prompts that should trigger `research-explore`:
+Prompts that should trigger `ai-research-explore`:
 
 ```text
-Use research-explore on top of current_research baseline-clean@branch. Work on an isolated branch, try three low-risk adapter variants, run short-cycle checks, and rank the candidates in explore_outputs/.
+Use ai-research-explore on top of current_research baseline-clean@branch. Work on an isolated branch, try three low-risk adapter variants, run short-cycle checks, and rank the candidates in explore_outputs/.
 ```
 
 ```text
 This model is already reproduced and lightly improved. Use it as current_research, explore a few candidate heads and training variants on top of it, keep all work exploratory only, and do not present the results as the trusted baseline.
 ```
 
-Prompts that should not trigger `research-explore`:
+Prompts that should not trigger `ai-research-explore`:
 
 ```text
 Reproduce this paper repository from the README and verify the documented evaluation command.
@@ -286,7 +286,7 @@ Recommended future registry entry:
 
 ```json
 {
-  "name": "research-explore",
+  "name": "ai-research-explore",
   "tier": "public",
   "lane": "explore",
   "compat": {
@@ -323,7 +323,7 @@ Recommended future registry entry:
 Before implementation is trusted, add:
 
 1. positive trigger cases for explicit exploration on top of `current_research`
-2. boundary cases against `ai-paper-reproduction`
+2. boundary cases against `ai-research-reproduction`
 3. boundary cases against `explore-code`
 4. boundary cases against `explore-run`
 5. output rendering tests for `current_research` and experiment branch recording
@@ -335,7 +335,7 @@ Before implementation is trusted, add:
 Recommended order:
 
 1. land this design
-2. implement `skills/research-explore/`
+2. implement `skills/ai-research-explore/`
 3. add trigger and output tests
 4. update README and routing docs
 5. observe whether `explore-code` and `explore-run` still justify staying public
@@ -344,6 +344,7 @@ Do not demote existing public explore skills until real usage shows that the new
 
 ## Open Questions
 
-- Should `research-explore` require an explicit metric name up front, or allow code-only exploration first
+- Should `ai-research-explore` require an explicit metric name up front, or allow code-only exploration first
 - Should `repo-intake-and-plan` be callable in explore-lane orchestration when `current_research` metadata is incomplete
 - Should `explore_outputs/status.json` gain a first-class `current_research` field before implementation starts
+

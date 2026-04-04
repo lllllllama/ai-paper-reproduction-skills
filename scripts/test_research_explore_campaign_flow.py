@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression checks for campaign-centric research-explore flow."""
+"""Regression checks for campaign-centric ai-research-explore flow."""
 
 from __future__ import annotations
 
@@ -32,6 +32,7 @@ def write_repo(root: Path) -> None:
         "args = sys.argv[1:]\n"
         "config = args[args.index('--config') + 1]\n"
         "Path(config).read_text()\n"
+        "Path('execution-cwd.txt').write_text(Path.cwd().as_posix(), encoding='utf-8')\n"
         "rank = args[args.index('--lora-rank') + 1] if '--lora-rank' in args else '4'\n"
         "miou = 80.4 if rank == '8' else 79.8\n"
         "val_loss = 0.18 if rank == '8' else 0.31\n"
@@ -69,7 +70,7 @@ def remove_readonly(func, path, _excinfo) -> None:
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    orchestrator = repo_root / "skills" / "research-explore" / "scripts" / "orchestrate_explore.py"
+    orchestrator = repo_root / "skills" / "ai-research-explore" / "scripts" / "orchestrate_explore.py"
 
     temp_root = Path(tempfile.mkdtemp(prefix="codex-research-campaign-", dir=repo_root))
     try:
@@ -173,76 +174,154 @@ def main() -> int:
 
         payload = json.loads(result.stdout)
         if payload["campaign"]["mode"] != "campaign":
-            raise AssertionError("research-explore did not switch into campaign mode")
+            raise AssertionError("ai-research-explore did not switch into campaign mode")
         if payload["baseline_gate"]["decision"] != "proceed":
-            raise AssertionError("research-explore did not proceed after a near-SOTA baseline")
+            raise AssertionError("ai-research-explore did not proceed after a near-SOTA baseline")
         if payload["selected_idea"]["id"] != "idea-lora-rank":
-            raise AssertionError("research-explore selected the wrong top-ranked idea")
+            raise AssertionError("ai-research-explore selected the wrong top-ranked idea")
         if payload["human_checkpoint_state"] != "not-required":
-            raise AssertionError("research-explore requested a checkpoint unexpectedly")
+            raise AssertionError("ai-research-explore requested a checkpoint unexpectedly")
         if payload["metric_policy"]["primary_metric"] != "val_loss":
-            raise AssertionError("research-explore did not preserve the run-ranking metric policy")
+            raise AssertionError("ai-research-explore did not preserve the run-ranking metric policy")
         if payload["campaign"]["execution_policy"]["max_executed_variants"] != 2:
-            raise AssertionError("research-explore overwrote campaign max_executed_variants with CLI defaults")
+            raise AssertionError("ai-research-explore overwrote campaign max_executed_variants with CLI defaults")
         if payload["campaign"]["execution_policy"]["variant_timeout"] != 1800:
-            raise AssertionError("research-explore overwrote campaign variant_timeout with CLI defaults")
+            raise AssertionError("ai-research-explore overwrote campaign variant_timeout with CLI defaults")
         if payload["executed_variant_count"] != 2:
-            raise AssertionError("research-explore did not execute the configured number of campaign variants")
+            raise AssertionError("ai-research-explore did not execute the configured number of campaign variants")
+        if "new_files" not in payload["best_runs"][0] or "touched_paths" not in payload["best_runs"][0]:
+            raise AssertionError("ai-research-explore did not preserve executor evidence fields in executed runs")
         if payload["sota_claim_state"] != "candidate-exceeds-provided-sota":
-            raise AssertionError("research-explore did not surface the provided-SOTA overtake state")
+            raise AssertionError("ai-research-explore did not surface the provided-SOTA overtake state")
         if payload["short_run_gate"]["status"] != "passed":
-            raise AssertionError("research-explore did not pass the short-run gate")
+            raise AssertionError("ai-research-explore did not pass the short-run gate")
         if payload["lookup_record_count"] <= 0:
-            raise AssertionError("research-explore did not emit lookup records")
+            raise AssertionError("ai-research-explore did not emit lookup records")
         if not payload["minimal_patch_plan"]:
-            raise AssertionError("research-explore did not emit a minimal patch plan")
+            raise AssertionError("ai-research-explore did not emit a minimal patch plan")
         if payload["resource_plan"]["short_run_feasibility"] != "proceed":
-            raise AssertionError("research-explore did not emit the resource feasibility summary")
+            raise AssertionError("ai-research-explore did not emit the resource feasibility summary")
         if payload["smoke_report"]["status"] != "passed":
-            raise AssertionError("research-explore did not emit the smoke report")
+            raise AssertionError("ai-research-explore did not emit the smoke report")
+        if payload["researcher_idea_count"] != 2:
+            raise AssertionError("ai-research-explore lost researcher idea counts")
+        if payload["generated_idea_count"] <= 0:
+            raise AssertionError("ai-research-explore did not append synthesized seed ideas")
+        if payload["selected_idea"]["seed_origin"] != "researcher":
+            raise AssertionError("ai-research-explore should keep final selection inside the researcher pool when a researcher idea passes")
+        if payload["atomic_unit_count"] <= 0:
+            raise AssertionError("ai-research-explore did not emit atomic decomposition units")
+        if payload["fidelity_summary"]["unit_count"] <= 0:
+            raise AssertionError("ai-research-explore did not emit implementation fidelity summary")
 
         for rel in ["IDEA_GATE.md", "EXPERIMENT_PLAN.md", "EXPERIMENT_MANIFEST.md", "EXPERIMENT_LEDGER.md", "TRANSPLANT_SMOKE_REPORT.md", "status.json"]:
             if not (output_dir / rel).exists():
-                raise AssertionError(f"research-explore campaign flow failed to emit {rel}")
+                raise AssertionError(f"ai-research-explore campaign flow failed to emit {rel}")
 
         analysis_dir = temp_root / "analysis_outputs"
-        for rel in ["RESEARCH_MAP.md", "CHANGE_MAP.md", "EVAL_CONTRACT.md", "SOURCE_INVENTORY.md", "SOURCE_SUPPORT.json", "IMPROVEMENT_BANK.md", "IDEA_CARDS.json", "IDEA_EVALUATION.md", "IDEA_SCORES.json", "MODULE_CANDIDATES.md", "INTERFACE_DIFF.md", "RESOURCE_PLAN.md", "status.json"]:
+        for rel in ["RESEARCH_MAP.md", "CHANGE_MAP.md", "EVAL_CONTRACT.md", "SOURCE_INVENTORY.md", "SOURCE_SUPPORT.json", "IMPROVEMENT_BANK.md", "IDEA_CARDS.json", "IDEA_SEEDS.json", "IDEA_EVALUATION.md", "IDEA_SCORES.json", "MODULE_CANDIDATES.md", "INTERFACE_DIFF.md", "ATOMIC_IDEA_MAP.md", "ATOMIC_IDEA_MAP.json", "IMPLEMENTATION_FIDELITY.md", "IMPLEMENTATION_FIDELITY.json", "RESOURCE_PLAN.md", "status.json"]:
             if not (analysis_dir / rel).exists():
-                raise AssertionError(f"research-explore campaign flow failed to emit analysis_outputs/{rel}")
+                raise AssertionError(f"ai-research-explore campaign flow failed to emit analysis_outputs/{rel}")
         idea_scores = json.loads((analysis_dir / "IDEA_SCORES.json").read_text(encoding="utf-8"))
-        if not idea_scores or idea_scores[0]["id"] != payload["selected_idea"]["id"]:
-            raise AssertionError("research-explore selected_idea diverged from IDEA_SCORES.json[0]")
+        if not idea_scores or not idea_scores[0]["score_breakdown"].get("novelty_estimate"):
+            raise AssertionError("ai-research-explore did not emit explicit score breakdowns")
+        if next(item for item in idea_scores if item["id"] == payload["selected_idea"]["id"])["seed_origin"] != "researcher":
+            raise AssertionError("ai-research-explore lost selected idea provenance in IDEA_SCORES.json")
+        idea_seeds = json.loads((analysis_dir / "IDEA_SEEDS.json").read_text(encoding="utf-8"))
+        if len(idea_seeds["researcher_ideas"]) != 2 or len(idea_seeds["generated_ideas"]) <= 0:
+            raise AssertionError("ai-research-explore lost researcher/generated idea separation in IDEA_SEEDS.json")
+        required_seed_fields = {
+            "id",
+            "summary",
+            "seed_origin",
+            "context_anchor",
+            "task_family_binding",
+            "dataset_binding",
+            "evaluation_binding",
+            "constraint_notes",
+        }
+        if not required_seed_fields.issubset(set(idea_seeds["generated_ideas"][0])):
+            raise AssertionError("ai-research-explore IDEA_SEEDS.json lost required seed schema fields")
+        atomic_map = json.loads((analysis_dir / "ATOMIC_IDEA_MAP.json").read_text(encoding="utf-8"))
+        required_atomic_fields = {
+            "atomic_id",
+            "concept_name",
+            "formula_support",
+            "code_support",
+            "target_file_candidates",
+            "validation_strategy",
+            "scientific_meaning_risk",
+        }
+        if not atomic_map["atomic_units"] or not required_atomic_fields.issubset(set(atomic_map["atomic_units"][0])):
+            raise AssertionError("ai-research-explore ATOMIC_IDEA_MAP.json lost required unit schema fields")
+        fidelity = json.loads((analysis_dir / "IMPLEMENTATION_FIDELITY.json").read_text(encoding="utf-8"))
+        required_fidelity_fields = {
+            "planned_implementation_sites",
+            "heuristic_implementation_sites",
+            "observed_implementation_sites",
+            "evidence_provenance",
+            "verification_level",
+            "fidelity_state",
+        }
+        if not fidelity["fidelity_units"] or not required_fidelity_fields.issubset(set(fidelity["fidelity_units"][0])):
+            raise AssertionError("ai-research-explore IMPLEMENTATION_FIDELITY.json lost required unit schema fields")
+        planned_sites = set(fidelity["fidelity_units"][0]["planned_implementation_sites"])
+        observed_sites = set(fidelity["fidelity_units"][0]["observed_implementation_sites"])
+        if planned_sites & observed_sites:
+            raise AssertionError("planned implementation sites leaked into observed implementation sites")
+        evaluation_md = (analysis_dir / "IDEA_EVALUATION.md").read_text(encoding="utf-8")
+        if idea_scores[0]["id"] not in evaluation_md or payload["selected_idea"]["id"] not in evaluation_md:
+            raise AssertionError("ai-research-explore IDEA_EVALUATION.md diverged from IDEA_SCORES.json selection details")
+        fidelity_md = (analysis_dir / "IMPLEMENTATION_FIDELITY.md").read_text(encoding="utf-8")
+        if fidelity["fidelity_units"][0]["verification_level"] not in fidelity_md:
+            raise AssertionError("ai-research-explore IMPLEMENTATION_FIDELITY.md lost verification_level details")
+        if fidelity["fidelity_units"][0]["fidelity_state"] not in fidelity_md:
+            raise AssertionError("ai-research-explore IMPLEMENTATION_FIDELITY.md lost fidelity_state details")
         sources_dir = temp_root / "sources"
         for rel in ["index.json", "SUMMARY.md"]:
             if not (sources_dir / rel).exists():
-                raise AssertionError(f"research-explore campaign flow failed to emit sources/{rel}")
+                raise AssertionError(f"ai-research-explore campaign flow failed to emit sources/{rel}")
         if not (sources_dir / "records").exists():
-            raise AssertionError("research-explore campaign flow failed to emit sources/records")
+            raise AssertionError("ai-research-explore campaign flow failed to emit sources/records")
 
         status = json.loads((output_dir / "status.json").read_text(encoding="utf-8"))
         if status["campaign"]["task_family"] != "segmentation":
-            raise AssertionError("research-explore status lost campaign task_family")
+            raise AssertionError("ai-research-explore status lost campaign task_family")
         if status["baseline_gate"]["decision"] != "proceed":
-            raise AssertionError("research-explore status lost baseline gate decision")
+            raise AssertionError("ai-research-explore status lost baseline gate decision")
         if status["selected_idea"]["id"] != "idea-lora-rank":
-            raise AssertionError("research-explore status lost selected idea")
+            raise AssertionError("ai-research-explore status lost selected idea")
         if status["sota_claim_state"] != "candidate-exceeds-provided-sota":
-            raise AssertionError("research-explore status lost SOTA claim state")
+            raise AssertionError("ai-research-explore status lost SOTA claim state")
         if status["metric_policy"]["primary_metric"] != "val_loss":
-            raise AssertionError("research-explore status lost the run-ranking metric policy")
+            raise AssertionError("ai-research-explore status lost the run-ranking metric policy")
         if status["resource_plan"]["short_run_feasibility"] != "proceed":
-            raise AssertionError("research-explore status lost resource feasibility")
+            raise AssertionError("ai-research-explore status lost resource feasibility")
         if status["smoke_report"]["status"] != "passed":
-            raise AssertionError("research-explore status lost smoke report")
+            raise AssertionError("ai-research-explore status lost smoke report")
         if not status["lookup_records"]:
-            raise AssertionError("research-explore status lost lookup records")
+            raise AssertionError("ai-research-explore status lost lookup records")
         if not status["source_inventory_path"] or not status["source_support_path"]:
-            raise AssertionError("research-explore status lost source inventory/support artifact paths")
+            raise AssertionError("ai-research-explore status lost source inventory/support artifact paths")
         if status["source_record_count"] <= 0:
-            raise AssertionError("research-explore status lost source record count")
+            raise AssertionError("ai-research-explore status lost source record count")
+        if status["outputs"]["idea_seeds"] != "analysis_outputs/IDEA_SEEDS.json":
+            raise AssertionError("ai-research-explore status lost IDEA_SEEDS output")
+        if status["outputs"]["atomic_idea_map"] != "analysis_outputs/ATOMIC_IDEA_MAP.json":
+            raise AssertionError("ai-research-explore status lost ATOMIC_IDEA_MAP output")
+        if status["outputs"]["implementation_fidelity"] != "analysis_outputs/IMPLEMENTATION_FIDELITY.json":
+            raise AssertionError("ai-research-explore status lost IMPLEMENTATION_FIDELITY output")
+        if status["generated_idea_count"] <= 0 or status["researcher_idea_count"] != 2:
+            raise AssertionError("ai-research-explore status lost idea-generation counts")
+        if status["selected_idea_breakdown"].get("novelty_estimate", {}).get("contribution") is None:
+            raise AssertionError("ai-research-explore status lost selected idea breakdown")
+        if status["atomic_unit_count"] <= 0:
+            raise AssertionError("ai-research-explore status lost atomic unit count")
+        if status["fidelity_summary"]["unit_count"] <= 0:
+            raise AssertionError("ai-research-explore status lost fidelity summary")
 
         print("ok: True")
-        print("checks: 36")
+        print("checks: 48")
         print("failures: 0")
         return 0
     finally:
@@ -252,3 +331,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

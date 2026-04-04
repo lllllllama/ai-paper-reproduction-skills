@@ -10,7 +10,7 @@ def write_sources_summary(sources_dir: Path, records: Sequence[Dict[str, Any]]) 
     lines = [
         "# Sources Summary",
         "",
-        "Research lookup for `research-explore` is free-first, cache-first, and auditable.",
+        "Research lookup for `ai-research-explore` is free-first, cache-first, and auditable.",
         "",
         "## Cached Records",
         "",
@@ -90,3 +90,4 @@ def write_source_inventory(
     path = analysis_output_dir / "SOURCE_INVENTORY.md"
     path.write_text("\n".join(lines), encoding="utf-8")
     return path
+

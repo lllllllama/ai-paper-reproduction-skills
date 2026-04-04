@@ -21,7 +21,7 @@ description: Explore-lane code adaptation skill for deep learning research repos
 
 - This skill owns exploratory code modifications only.
 - It must keep work isolated from the trusted baseline.
-- Use `research-explore` instead when the task spans both current_research coordination and exploratory runs.
+- Use `ai-research-explore` instead when the task spans both current_research coordination and exploratory runs.
 - It may hand off execution to `minimal-run-and-audit` or `run-train`.
 - It should favor source-anchored copying and minimal adaptation over freeform rewrites.
 
@@ -34,3 +34,4 @@ description: Explore-lane code adaptation skill for deep learning research repos
 ## Notes
 
 Use `references/explore-policy.md`, `scripts/plan_code_changes.py`, and `scripts/write_outputs.py`.
+

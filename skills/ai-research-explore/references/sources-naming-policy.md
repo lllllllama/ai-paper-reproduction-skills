@@ -1,6 +1,6 @@
 # Sources Naming Policy
 
-All internal research lookup results for `research-explore` are saved under `sources/`.
+All internal research lookup results for `ai-research-explore` are saved under `sources/`.
 
 ## Naming
 
@@ -22,3 +22,4 @@ All internal research lookup results for `research-explore` are saved under `sou
 - `sources/` is an exploratory audit trail, not a trusted literature database
 - source cache entries must not imply benchmark completeness
 - source cache entries must not imply novelty proof
+

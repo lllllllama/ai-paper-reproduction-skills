@@ -230,7 +230,7 @@ def explicit_repro_intent(text: str) -> bool:
     return contains_any(
         text,
         [
-            "use ai-paper-reproduction",
+            "use ai-research-reproduction",
             "end-to-end",
             "orchestrate",
             "repro_outputs",
@@ -329,7 +329,7 @@ def research_explore_intent(text: str) -> bool:
     return contains_any(
         text,
         [
-            "research-explore",
+            "ai-research-explore",
             "orchestrate exploration",
             "coordinate code and run",
             "coordinate exploratory code and run",
@@ -506,7 +506,7 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
     has_research_debug_context = research_debug_context(prompt_text)
     forbids_run = contains_any(prompt_text, ["do not run", "don't run", "without running", "before we execute"])
 
-    if skill_name == "ai-paper-reproduction":
+    if skill_name == "ai-research-reproduction":
         if not has_repo:
             return 0.0
         explicit_repro = explicit_repro_intent(prompt_text)
@@ -598,7 +598,7 @@ def apply_skill_gates(skill_name: str, prompt_text: str, base_score: float) -> f
             return 0.0
         return base_score + 5.0
 
-    if skill_name == "research-explore":
+    if skill_name == "ai-research-explore":
         if has_error or wants_debug:
             return 0.0
         if not has_explore_auth:
@@ -758,3 +758,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

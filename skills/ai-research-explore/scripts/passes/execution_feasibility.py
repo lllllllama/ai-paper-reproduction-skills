@@ -1,4 +1,4 @@
-"""Execution feasibility and smoke-validation pass for research-explore."""
+"""Execution feasibility and smoke-validation pass for ai-research-explore."""
 
 from __future__ import annotations
 
@@ -534,3 +534,4 @@ def run_execution_feasibility_pass(
         "runtime_smoke": runtime_smoke,
         "smoke_report": smoke_report,
     }
+

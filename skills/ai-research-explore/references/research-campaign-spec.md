@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Use `research_campaign.json` or `research_campaign.yaml` when `research-explore` is operating in the third scenario:
+Use `research_campaign.json` or `research_campaign.yaml` when `ai-research-explore` is operating in the third scenario:
 
 - the task family is already chosen
 - the dataset is already chosen
@@ -92,9 +92,9 @@ Use `research_campaign.json` or `research_campaign.yaml` when `research-explore`
 - `evaluation_source`
   The frozen evaluation contract input. Prefer a command plus an optional path.
 - `sota_reference`
-  The user-provided comparison table. `research-explore` treats this as authoritative input and does not prove completeness.
+  The user-provided comparison table. `ai-research-explore` treats this as authoritative input and does not prove completeness.
 - `candidate_ideas`
-  Preferred but optional candidate directions that the researcher already wants to consider. If omitted, the orchestrator synthesizes one conservative single-variable seed idea from the variant spec.
+  Preferred but optional candidate directions that the researcher already wants to consider. If omitted, or if `idea_generation.allow_synthesized_seed_ideas` stays enabled, the orchestrator may add a small number of conservative single-variable seed ideas.
 - `variant_spec`
   The run-level candidate matrix used by `explore-run`.
 
@@ -102,6 +102,7 @@ Optional top-level fields:
 
 - `research_lookup`
 - `idea_policy`
+- `idea_generation`
 - `source_constraints`
 - `feasibility_policy`
 
@@ -159,7 +160,7 @@ Optional fields:
 - `hypothesis`
 - `supporting_changes`
 
-The orchestrator uses these to run the idea gate. It does not treat them as novelty claims.
+The orchestrator uses these to run the idea gate. It does not treat them as novelty claims. When a researcher idea passes hard gates, final selection stays inside the researcher pool even if synthesized or hybrid ideas are also present for auditability.
 
 ## Optional Policy Blocks
 
@@ -185,6 +186,24 @@ Suggested fields:
 - `max_patch_surface`
 - `max_dependency_drag`
 - `require_source_backing`
+
+### `idea_generation`
+
+Optional hints for bounded idea-space expansion. This block is additive; it should not break the minimal campaign shape.
+
+Supported fields:
+
+- `allow_synthesized_seed_ideas`
+- `max_generated_ideas`
+- `require_diverse_targets`
+
+Default behavior keeps generation conservative:
+
+- prefer single-variable ideas
+- do not modify the frozen eval contract
+- do not jump directly to broad architecture rewrites
+- keep synthesized ideas bounded to repo-local components, existing variant axes, or lookup-backed source hints
+- bind each generated seed to `current_research`, `task_family`, `dataset`, and `evaluation_source` in `IDEA_SEEDS.json`
 
 ### `source_constraints`
 
@@ -238,10 +257,13 @@ Soft ranking combines:
 
 - `expected_upside`
 - `single_variable_fit`
+- `groundedness`
+- `novelty_estimate`
 - `interface_fit`
 - `rollback_ease`
-- `innovation_story_strength`
 - `source_support_strength`
+- `ablation_clarity`
+- `implementation_story_clarity`
 - `implementation_risk`
 - `eval_risk`
 - `estimated_runtime_cost`
@@ -249,7 +271,9 @@ Soft ranking combines:
 - `dependency_drag`
 - `baseline_distance`
 
-If the top-two ideas are too close, `research-explore` records a human checkpoint instead of silently training.
+`IDEA_SCORES.json` records both raw inputs and explicit score breakdowns. If the active top-two ideas are too close, `ai-research-explore` records a human checkpoint instead of silently training.
+
+If the selected idea cannot be decomposed into implementable atomic units, `ai-research-explore` records an explicit blocker/checkpoint such as `atomic-decomposition-blocked` and stops before broader implementation or execution.
 
 ## Output Expectations
 
@@ -262,10 +286,15 @@ Campaign mode writes:
 - `analysis_outputs/SOURCE_SUPPORT.json`
 - `analysis_outputs/IMPROVEMENT_BANK.md`
 - `analysis_outputs/IDEA_CARDS.json`
+- `analysis_outputs/IDEA_SEEDS.json`
 - `analysis_outputs/IDEA_EVALUATION.md`
 - `analysis_outputs/IDEA_SCORES.json`
 - `analysis_outputs/MODULE_CANDIDATES.md`
 - `analysis_outputs/INTERFACE_DIFF.md`
+- `analysis_outputs/ATOMIC_IDEA_MAP.md`
+- `analysis_outputs/ATOMIC_IDEA_MAP.json`
+- `analysis_outputs/IMPLEMENTATION_FIDELITY.md`
+- `analysis_outputs/IMPLEMENTATION_FIDELITY.json`
 - `analysis_outputs/RESOURCE_PLAN.md`
 - `analysis_outputs/status.json`
 - `sources/index.json`
@@ -282,6 +311,9 @@ Campaign mode writes:
 
 ## Notes
 
-- Keep idea generation human-guided.
+- Keep idea generation bounded and auditable rather than open-ended.
 - Keep evaluation and SOTA inputs human-frozen.
-- Let `research-explore` focus on understanding, gating, implementation planning, controlled execution, and comparison.
+- `IDEA_SEEDS.json` should expose per-seed bindings such as `context_anchor`, `task_family_binding`, `dataset_binding`, `evaluation_binding`, and `constraint_notes`.
+- `IMPLEMENTATION_FIDELITY.json` should separate `planned_implementation_sites`, `heuristic_implementation_sites`, and `observed_implementation_sites`, and should record `verification_level` as one of `not_checked`, `planned_only`, `heuristic_only`, `executor_observed`, or `diff_verified`.
+- Let `ai-research-explore` focus on understanding, gating, implementation planning, controlled execution, and comparison.
+

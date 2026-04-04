@@ -2,12 +2,14 @@
   "schema_version": "1.0",
   "skills": [
     {
-      "name": "ai-paper-reproduction",
+      "name": "ai-research-reproduction",
       "tier": "public",
       "lane": "trusted",
       "compat": {
         "preserve_name": true,
-        "aliases": []
+        "aliases": [
+          "ai-paper-reproduction"
+        ]
       },
       "can_call": [
         "repo-intake-and-plan",
@@ -166,12 +168,14 @@
       }
     },
     {
-      "name": "research-explore",
+      "name": "ai-research-explore",
       "tier": "public",
       "lane": "explore",
       "compat": {
         "preserve_name": true,
-        "aliases": []
+        "aliases": [
+          "research-explore"
+        ]
       },
       "can_call": [
         "analyze-project",
@@ -183,14 +187,24 @@
       ],
       "required_files": [
         "SKILL.md",
-        "references/research-explore-policy.md",
+        "references/ai-research-explore-policy.md",
         "references/research-campaign-spec.md",
         "references/idea-evaluation-framework.md",
         "references/source-mapping-policy.md",
         "references/smoke-validation-policy.md",
         "references/sources-naming-policy.md",
         "scripts/orchestrate_explore.py",
-        "scripts/write_outputs.py"
+        "scripts/write_outputs.py",
+        "scripts/passes/__init__.py",
+        "scripts/passes/lookup_sources.py",
+        "scripts/passes/improvement_bank.py",
+        "scripts/passes/candidate_idea_generation.py",
+        "scripts/passes/idea_cards.py",
+        "scripts/passes/idea_ranking.py",
+        "scripts/passes/source_mapping.py",
+        "scripts/passes/atomic_idea_decomposition.py",
+        "scripts/passes/execution_feasibility.py",
+        "scripts/passes/implementation_fidelity.py"
       ],
       "output_mode": {
         "kind": "explore",
@@ -308,3 +322,4 @@
     }
   ]
 }
+

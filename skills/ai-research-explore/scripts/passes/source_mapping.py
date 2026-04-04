@@ -1,4 +1,4 @@
-"""Source module lookup and interface diff pass for research-explore."""
+"""Source module lookup and interface diff pass for ai-research-explore."""
 
 from __future__ import annotations
 
@@ -108,9 +108,23 @@ def build_target_location_map(
     code_plan: Dict[str, Any],
 ) -> List[Dict[str, Any]]:
     target_symbol = best_target_symbol(selected_idea, analysis_data)
-    config_hints = analysis_data.get("config_binding_hints", [])
+    config_hints = list(analysis_data.get("config_binding_hints", []))
+    target_component = str(selected_idea.get("target_component") or "").lower()
+    prefer_config_only = "config" in target_component
     results: List[Dict[str, Any]] = []
-    for path in first_items(code_plan.get("candidate_edit_targets", []), 4):
+    candidate_paths = first_items(code_plan.get("candidate_edit_targets", []), 4)
+    if not config_hints:
+        config_hints = [
+            path
+            for path in candidate_paths
+            if any(token in str(path).lower() for token in ("config", ".yaml", ".yml", ".json", ".toml", ".ini"))
+        ]
+    if prefer_config_only and config_hints:
+        candidate_paths = first_items(
+            [path for path in candidate_paths if path in config_hints] or list(config_hints),
+            4,
+        )
+    for path in candidate_paths:
         results.append(
             {
                 "file": path,
@@ -417,3 +431,4 @@ def run_source_mapping_pass(
         "patch_class_source": patch_class["patch_class_source"],
         "requires_source_triple": patch_class["requires_source_triple"],
     }
+

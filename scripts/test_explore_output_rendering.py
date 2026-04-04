@@ -19,10 +19,10 @@ def assert_contains(text: str, needle: str, label: str) -> None:
 def write_context(path: Path, mode: str) -> None:
     context = {
         "schema_version": "1.0",
-        "context_id": "research-explore-demo",
+        "context_id": "ai-research-explore-demo",
         "status": "planned" if mode in {"code", "research"} else "completed",
         "explore_context": {
-            "context_id": "research-explore-demo",
+            "context_id": "ai-research-explore-demo",
             "current_research": "main@abc1234",
             "experiment_branch": "exp/lora-demo",
             "explicit_explore_authorization": True,
@@ -69,7 +69,7 @@ def write_context(path: Path, mode: str) -> None:
         "helper_stage_trace": [
             {
                 "stage": "workspace",
-                "tool": "research-explore/ensure_experiment_workspace",
+                "tool": "ai-research-explore/ensure_experiment_workspace",
                 "status": "completed",
                 "summary": "Created isolated experiment branch `exp/lora-demo`.",
             }
@@ -98,8 +98,10 @@ def write_context(path: Path, mode: str) -> None:
         },
         "idea_gate": {
             "decision": "selected",
+            "active_selection_pool": "researcher",
+            "selection_reason": "researcher hard precedence kept final selection inside the researcher-provided pool.",
             "ranked_ideas": [
-                {"id": "idea-001", "idea_score": 0.77, "summary": "Tune the adapter rank."}
+                {"id": "idea-001", "idea_score": 0.77, "summary": "Tune the adapter rank.", "seed_origin": "researcher"}
             ],
         },
         "selected_idea": {
@@ -108,12 +110,27 @@ def write_context(path: Path, mode: str) -> None:
             "target_component": "adapter",
             "change_scope": "rank",
             "source_reference": ["paper:abc12345"],
+            "seed_origin": "researcher",
+            "selection_pool": "researcher",
         },
+        "selected_idea_breakdown": {
+            "novelty_estimate": {"value": 0.55, "weight": 5.0, "direction": "positive", "contribution": 2.75}
+        },
+        "idea_seeds": {
+            "generation_policy": {"allow_synthesized_seed_ideas": True, "max_generated_ideas": 3, "require_diverse_targets": True},
+            "researcher_ideas": [{"id": "idea-001"}],
+            "generated_ideas": [{"id": "idea-seed-001", "seed_origin": "synthesized"}],
+        },
+        "generated_idea_count": 1,
+        "researcher_idea_count": 1,
+        "synthesized_idea_count": 1,
         "experiment_manifest": {
             "parent_baseline": "main@abc1234",
             "idea_id": "idea-001",
             "hypothesis": "Higher rank improves the exploratory validation metric.",
-            "changed_files": ["model.py", "configs/demo.yaml"],
+            "changed_files": ["model.py"],
+            "planned_changed_files": ["model.py", "configs/demo.yaml"],
+            "observed_changed_files": ["model.py"],
             "eval_contract_ref": "analysis_outputs/EVAL_CONTRACT.md",
             "primary_metric": "val_loss",
             "promotion_rule": "manual-review",
@@ -132,6 +149,9 @@ def write_context(path: Path, mode: str) -> None:
                 "short_run_feasibility": "proceed",
                 "full_run_feasibility": "borderline",
             },
+            "atomic_idea_map_ref": "analysis_outputs/ATOMIC_IDEA_MAP.json",
+            "implementation_fidelity_ref": "analysis_outputs/IMPLEMENTATION_FIDELITY.json",
+            "implementation_fidelity_summary": {"unit_count": 2, "states": {"partial": 1, "unclear": 1}, "verification_levels": {"heuristic_only": 1, "planned_only": 1}},
         },
         "experiment_ledger": {
             "baseline": {
@@ -160,11 +180,34 @@ def write_context(path: Path, mode: str) -> None:
             "source_support": "analysis_outputs/SOURCE_SUPPORT.json",
             "improvement_bank": "analysis_outputs/IMPROVEMENT_BANK.md",
             "idea_cards": "analysis_outputs/IDEA_CARDS.json",
+            "idea_seeds": "analysis_outputs/IDEA_SEEDS.json",
             "idea_evaluation": "analysis_outputs/IDEA_EVALUATION.md",
             "idea_scores": "analysis_outputs/IDEA_SCORES.json",
             "module_candidates": "analysis_outputs/MODULE_CANDIDATES.md",
             "interface_diff": "analysis_outputs/INTERFACE_DIFF.md",
+            "atomic_idea_map": "analysis_outputs/ATOMIC_IDEA_MAP.json",
+            "implementation_fidelity": "analysis_outputs/IMPLEMENTATION_FIDELITY.json",
             "resource_plan": "analysis_outputs/RESOURCE_PLAN.md",
+        },
+        "atomic_idea_map": {
+            "status": "ready",
+            "atomic_unit_count": 2,
+            "atomic_units": [{"atomic_id": "idea-001-atomic-01"}, {"atomic_id": "idea-001-atomic-02"}],
+        },
+        "atomic_unit_count": 2,
+        "implementation_fidelity": {
+            "fidelity_summary": {
+                "unit_count": 2,
+                "states": {"partial": 1, "unclear": 1},
+                "verification_levels": {"heuristic_only": 1, "planned_only": 1},
+                "verification_modes": {"heuristic": 1, "not_checked": 1},
+            }
+        },
+        "fidelity_summary": {
+            "unit_count": 2,
+            "states": {"partial": 1, "unclear": 1},
+            "verification_levels": {"heuristic_only": 1, "planned_only": 1},
+            "verification_modes": {"heuristic": 1, "not_checked": 1},
         },
         "sources_dir": "D:/demo/sources",
         "sources_records_dir": "D:/demo/sources/records",
@@ -266,7 +309,7 @@ def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
     code_writer = repo_root / "skills" / "explore-code" / "scripts" / "write_outputs.py"
     run_writer = repo_root / "skills" / "explore-run" / "scripts" / "write_outputs.py"
-    research_writer = repo_root / "skills" / "research-explore" / "scripts" / "write_outputs.py"
+    research_writer = repo_root / "skills" / "ai-research-explore" / "scripts" / "write_outputs.py"
 
     temp_root = Path(tempfile.mkdtemp(prefix="codex-explore-render-", dir=repo_root))
     try:
@@ -295,6 +338,9 @@ def main() -> int:
                 assert_contains(manifest, "paper:abc12345", "research/EXPERIMENT_MANIFEST.md")
                 assert_contains(smoke, "syntax-parse", "research/TRANSPLANT_SMOKE_REPORT.md")
                 assert_contains(smoke, "Runtime Smoke", "research/TRANSPLANT_SMOKE_REPORT.md")
+                assert_contains(manifest, "ATOMIC_IDEA_MAP.json", "research/EXPERIMENT_MANIFEST.md")
+                assert_contains(manifest, "IMPLEMENTATION_FIDELITY.json", "research/EXPERIMENT_MANIFEST.md")
+                assert_contains(manifest, "verification_levels", "research/EXPERIMENT_MANIFEST.md")
 
             assert_contains(changeset, "# Explore Changeset", f"{mode}/CHANGESET.md")
             assert_contains(changeset, "exp/lora-demo", f"{mode}/CHANGESET.md")
@@ -331,6 +377,12 @@ def main() -> int:
                 raise AssertionError("research explore status lost sota_claim_state")
             if mode == "research" and status["outputs"]["experiment_manifest"] != "explore_outputs/EXPERIMENT_MANIFEST.md":
                 raise AssertionError("research explore status lost experiment_manifest output")
+            if mode == "research" and status["outputs"]["idea_seeds"] != "analysis_outputs/IDEA_SEEDS.json":
+                raise AssertionError("research explore status lost idea_seeds output")
+            if mode == "research" and status["outputs"]["atomic_idea_map"] != "analysis_outputs/ATOMIC_IDEA_MAP.json":
+                raise AssertionError("research explore status lost atomic_idea_map output")
+            if mode == "research" and status["outputs"]["implementation_fidelity"] != "analysis_outputs/IMPLEMENTATION_FIDELITY.json":
+                raise AssertionError("research explore status lost implementation_fidelity output")
             if mode == "research" and status["resource_plan"]["short_run_feasibility"] != "proceed":
                 raise AssertionError("research explore status lost resource plan")
             if mode == "research" and status["smoke_report"]["status"] != "planned":
@@ -345,9 +397,15 @@ def main() -> int:
                 raise AssertionError("research explore status lost source inventory path")
             if mode == "research" and status["source_record_count"] != 1:
                 raise AssertionError("research explore status lost source record count")
+            if mode == "research" and status["generated_idea_count"] != 1:
+                raise AssertionError("research explore status lost generated idea count")
+            if mode == "research" and status["atomic_unit_count"] != 2:
+                raise AssertionError("research explore status lost atomic unit count")
+            if mode == "research" and status["fidelity_summary"]["unit_count"] != 2:
+                raise AssertionError("research explore status lost fidelity summary")
 
         print("ok: True")
-        print("checks: 40")
+        print("checks: 47")
         print("failures: 0")
         return 0
     finally:
@@ -357,3 +415,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

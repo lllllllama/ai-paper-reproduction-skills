@@ -3,7 +3,7 @@ description: Run end-to-end exploratory research work on top of current_research
 argument-hint: <current_research> [extra constraints]
 ---
 
-Read and follow @skills/research-explore/SKILL.md.
+Read and follow @skills/ai-research-explore/SKILL.md.
 
 Treat `$ARGUMENTS` as the exploratory brief. If the leading argument clearly identifies a branch, commit, checkpoint, run record, or trained model state, use it as `current_research`. If `current_research` is still ambiguous, ask one concise follow-up before continuing.
 

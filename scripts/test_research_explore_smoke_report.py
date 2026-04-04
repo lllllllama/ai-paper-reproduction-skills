@@ -13,16 +13,16 @@ from pathlib import Path
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    writer = repo_root / "skills" / "research-explore" / "scripts" / "write_outputs.py"
+    writer = repo_root / "skills" / "ai-research-explore" / "scripts" / "write_outputs.py"
 
     temp_root = Path(tempfile.mkdtemp(prefix="codex-smoke-report-", dir=repo_root))
     try:
         context = {
             "schema_version": "1.0",
-            "context_id": "research-explore-smoke",
+            "context_id": "ai-research-explore-smoke",
             "status": "planned",
             "explore_context": {
-                "context_id": "research-explore-smoke",
+                "context_id": "ai-research-explore-smoke",
                 "current_research": "main@abc1234",
                 "experiment_branch": "exp/smoke-demo",
                 "explicit_explore_authorization": True,
@@ -120,3 +120,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

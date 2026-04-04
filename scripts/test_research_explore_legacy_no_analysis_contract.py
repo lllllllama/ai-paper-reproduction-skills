@@ -43,7 +43,7 @@ def remove_readonly(func, path, _excinfo) -> None:
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    orchestrator = repo_root / "skills" / "research-explore" / "scripts" / "orchestrate_explore.py"
+    orchestrator = repo_root / "skills" / "ai-research-explore" / "scripts" / "orchestrate_explore.py"
 
     temp_root = Path(tempfile.mkdtemp(prefix="codex-legacy-no-analysis-", dir=repo_root))
     try:
@@ -101,3 +101,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

@@ -1,9 +1,9 @@
 ---
-name: ai-paper-reproduction
+name: ai-research-reproduction
 description: Main orchestrator for README-first AI repo reproduction. Use when the user wants an end-to-end, minimal-trustworthy reproduction flow that reads the repository first, selects the smallest documented inference or evaluation target, coordinates intake, setup, trusted execution, optional trusted training, optional repository analysis, and optional paper-gap resolution, enforces conservative patch rules, records evidence assumptions deviations and human decision points, and writes the standardized `repro_outputs/` bundle. Do not use for paper summary, generic environment setup, isolated repo scanning, standalone command execution, silent protocol changes, or broad research assistance outside repository-grounded reproduction.
 ---
 
-# ai-paper-reproduction
+# ai-research-reproduction
 
 ## Use when
 
@@ -150,3 +150,4 @@ Use the templates under `assets/` and the field rules in `references/output-spec
 - Keep machine-readable outputs backward compatible when possible.
 - Add new evidence sources only when they improve auditability without raising learning cost.
 - Treat `repo-intake-and-plan` and `paper-context-resolver` as narrow helpers, not primary public entrypoints.
+

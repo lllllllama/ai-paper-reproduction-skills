@@ -42,6 +42,10 @@ def main() -> int:
             raise AssertionError(f"{name} is missing compat.preserve_name")
         if not isinstance(compat.get("aliases", []), list):
             raise AssertionError(f"{name} has invalid compat.aliases")
+        if name == "ai-research-reproduction" and "ai-paper-reproduction" not in compat.get("aliases", []):
+            raise AssertionError("ai-research-reproduction must preserve ai-paper-reproduction as a compat alias")
+        if name == "ai-research-explore" and "research-explore" not in compat.get("aliases", []):
+            raise AssertionError("ai-research-explore must preserve research-explore as a compat alias")
 
         can_call = item.get("can_call", [])
         if not isinstance(can_call, list):

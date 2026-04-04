@@ -20,7 +20,7 @@ description: Explore-lane experimental execution skill for deep learning researc
 ## Clear boundaries
 
 - This skill owns exploratory execution planning and summary only.
-- Use `research-explore` instead when the task spans both current_research coordination and exploratory code changes.
+- Use `ai-research-explore` instead when the task spans both current_research coordination and exploratory code changes.
 - It may hand off actual command execution to `minimal-run-and-audit` or `run-train`.
 - It should keep experiment state isolated from the trusted baseline.
 - It should prefer small-subset and short-cycle checks before heavier exploratory runs.
@@ -48,3 +48,4 @@ description: Explore-lane experimental execution skill for deep learning researc
 ## Notes
 
 Use `references/execution-policy.md`, `../../references/explore-variant-spec.md`, `scripts/plan_variants.py`, and `scripts/write_outputs.py`.
+

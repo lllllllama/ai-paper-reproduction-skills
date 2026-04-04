@@ -1,6 +1,6 @@
 # Idea Evaluation Framework
 
-`research-explore` uses a bounded, candidate-only evaluation scheme for third-scenario idea ranking.
+`ai-research-explore` uses a bounded, candidate-only evaluation scheme for third-scenario idea ranking.
 
 ## Hard Gates
 
@@ -49,3 +49,4 @@ Each ranked card should record where each field came from:
 - ranking does not prove novelty
 - ranking does not prove benchmark completeness
 - ranking does not prove verified SOTA superiority
+

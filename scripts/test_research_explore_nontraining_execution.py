@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression checks for research-explore non-training variant execution handoff."""
+"""Regression checks for ai-research-explore non-training variant execution handoff."""
 
 from __future__ import annotations
 
@@ -28,6 +28,7 @@ def write_repo(root: Path) -> None:
         "args = sys.argv[1:]\n"
         "config_path = args[args.index('--config') + 1]\n"
         "Path(config_path).read_text()\n"
+        "Path('eval-execution-cwd.txt').write_text(Path.cwd().as_posix(), encoding='utf-8')\n"
         "adapter = args[args.index('--adapter') + 1] if '--adapter' in args else 'none'\n"
         "metric = 0.92 if adapter == 'tuned' else 0.74\n"
         "latency = 18 if adapter == 'tuned' else 7\n"
@@ -56,9 +57,9 @@ def remove_readonly(func, path, _excinfo) -> None:
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    orchestrator = repo_root / "skills" / "research-explore" / "scripts" / "orchestrate_explore.py"
+    orchestrator = repo_root / "skills" / "ai-research-explore" / "scripts" / "orchestrate_explore.py"
 
-    temp_root = Path(tempfile.mkdtemp(prefix="codex-research-explore-nontrain-", dir=repo_root))
+    temp_root = Path(tempfile.mkdtemp(prefix="codex-ai-research-explore-nontrain-", dir=repo_root))
     try:
         sample_repo = temp_root / "sample_repo"
         sample_repo.mkdir()
@@ -104,31 +105,35 @@ def main() -> int:
 
         payload = json.loads(result.stdout)
         if payload["executed_variant_count"] != 2:
-            raise AssertionError("research-explore did not execute the requested non-training variants")
+            raise AssertionError("ai-research-explore did not execute the requested non-training variants")
         if payload["best_runs"][0]["id"] != "variant-001":
-            raise AssertionError("research-explore failed to apply metric-aware ranking for non-training variants")
+            raise AssertionError("ai-research-explore failed to apply metric-aware ranking for non-training variants")
         if payload["best_runs"][0]["best_metric"]["name"] != "acc":
-            raise AssertionError("research-explore lost non-training metric metadata")
+            raise AssertionError("ai-research-explore lost non-training metric metadata")
         if payload["best_runs"][0]["ranking_metric_name"] != "latency":
-            raise AssertionError("research-explore did not record the explicit non-training ranking metric")
+            raise AssertionError("ai-research-explore did not record the explicit non-training ranking metric")
+        if "new_files" not in payload["best_runs"][0] or "touched_paths" not in payload["best_runs"][0]:
+            raise AssertionError("ai-research-explore non-training execution lost executor evidence fields")
+        if not any("eval-execution-cwd.txt" in item.get("new_files", []) for item in payload["best_runs"]):
+            raise AssertionError("ai-research-explore non-training execution did not preserve new file evidence from run_command")
         if payload["selection_policy"]["factors"] != ["cost", "success_rate", "expected_gain"]:
-            raise AssertionError("research-explore lost the pre-execution selection policy")
+            raise AssertionError("ai-research-explore lost the pre-execution selection policy")
         if payload["metric_policy"]["primary_metric"] != "latency":
-            raise AssertionError("research-explore lost the explicit non-training metric policy")
+            raise AssertionError("ai-research-explore lost the explicit non-training metric policy")
         if not any(entry["tool"] == "minimal-run-and-audit/scripts/run_command.py" for entry in payload["invoked_stage_trace"]):
-            raise AssertionError("research-explore failed to record minimal-run handoff in the stage trace")
+            raise AssertionError("ai-research-explore failed to record minimal-run handoff in the stage trace")
 
         status = json.loads((output_dir / "status.json").read_text(encoding="utf-8"))
         if status["status"] != "completed":
-            raise AssertionError("research-explore status did not advance after non-training execution")
+            raise AssertionError("ai-research-explore status did not advance after non-training execution")
         if status["best_runs"][0]["id"] != "variant-001":
-            raise AssertionError("research-explore status lost metric-aware non-training ordering")
+            raise AssertionError("ai-research-explore status lost metric-aware non-training ordering")
         if status["selection_policy"]["factors"] != ["cost", "success_rate", "expected_gain"]:
-            raise AssertionError("research-explore status lost selection policy")
+            raise AssertionError("ai-research-explore status lost selection policy")
 
         top_runs = (output_dir / "TOP_RUNS.md").read_text(encoding="utf-8")
         if "latency" not in top_runs:
-            raise AssertionError("research-explore top-runs summary lost non-training ranking policy")
+            raise AssertionError("ai-research-explore top-runs summary lost non-training ranking policy")
 
         print("ok: True")
         print("checks: 11")
@@ -141,3 +146,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

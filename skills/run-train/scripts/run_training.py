@@ -68,7 +68,98 @@ def split_command(command: str) -> List[str]:
     return shlex.split(command, posix=True)
 
 
+def run_git(repo: Path, args: List[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        timeout=15,
+        check=False,
+    )
+
+
+def git_status_snapshot(repo: Path) -> Tuple[Optional[Dict[str, str]], Dict[str, Any]]:
+    probe = run_git(repo, ["rev-parse", "--is-inside-work-tree"])
+    if probe.returncode != 0 or probe.stdout.strip() != "true":
+        return None, {
+            "collection_method": "git-status-diff",
+            "available": False,
+            "reason": "git-unavailable-or-not-a-worktree",
+        }
+
+    result = run_git(repo, ["status", "--porcelain=v1", "--untracked-files=all"])
+    if result.returncode != 0:
+        return None, {
+            "collection_method": "git-status-diff",
+            "available": False,
+            "reason": "git-status-failed",
+            "stderr": result.stderr.strip(),
+        }
+
+    snapshot: Dict[str, str] = {}
+    for raw_line in result.stdout.splitlines():
+        line = raw_line.rstrip()
+        if len(line) < 4:
+            continue
+        status = line[:2]
+        path = line[3:]
+        if " -> " in path:
+            _old, _arrow, path = path.partition(" -> ")
+        normalized = path.replace("\\", "/").strip()
+        if normalized:
+            snapshot[normalized] = status
+    return snapshot, {
+        "collection_method": "git-status-diff",
+        "available": True,
+        "status_entries": len(snapshot),
+    }
+
+
+def diff_status_snapshots(
+    before: Optional[Dict[str, str]],
+    after: Optional[Dict[str, str]],
+) -> Dict[str, List[str]]:
+    if before is None or after is None:
+        return {
+            "changed_files": [],
+            "new_files": [],
+            "deleted_files": [],
+            "touched_paths": [],
+            "touched_symbols": [],
+        }
+
+    changed_files: List[str] = []
+    new_files: List[str] = []
+    deleted_files: List[str] = []
+    for path, status in after.items():
+        previous_status = before.get(path)
+        if previous_status == status:
+            continue
+        normalized_status = status.replace(" ", "")
+        if "D" in normalized_status:
+            deleted_files.append(path)
+            continue
+        if "?" in normalized_status or "A" in normalized_status:
+            new_files.append(path)
+            continue
+        changed_files.append(path)
+
+    touched_paths = []
+    for path in [*changed_files, *new_files, *deleted_files]:
+        if path not in touched_paths:
+            touched_paths.append(path)
+    return {
+        "changed_files": changed_files,
+        "new_files": new_files,
+        "deleted_files": deleted_files,
+        "touched_paths": touched_paths,
+        "touched_symbols": [],
+    }
+
+
 def execute_command(repo: Path, command: str, timeout: int) -> Tuple[Dict[str, Any], str]:
+    before_status, before_capture = git_status_snapshot(repo)
     try:
         result = subprocess.run(
             split_command(command),
@@ -84,12 +175,19 @@ def execute_command(repo: Path, command: str, timeout: int) -> Tuple[Dict[str, A
                 f"STDERR:\n{result.stderr.strip()}" if result.stderr.strip() else "",
             ]
         )
-        return {
+        execution = {
             "returncode": result.returncode,
             "timed_out": False,
             "stdout": result.stdout or "",
             "stderr": result.stderr or "",
-        }, combined
+        }
+        after_status, after_capture = git_status_snapshot(repo)
+        execution.update(diff_status_snapshots(before_status, after_status))
+        execution["evidence_capture"] = {
+            **after_capture,
+            "before_status_entries": before_capture.get("status_entries"),
+        }
+        return execution, combined
     except FileNotFoundError as exc:
         return {
             "returncode": None,
@@ -97,6 +195,12 @@ def execute_command(repo: Path, command: str, timeout: int) -> Tuple[Dict[str, A
             "launch_error": str(exc),
             "stdout": "",
             "stderr": "",
+            "changed_files": [],
+            "new_files": [],
+            "deleted_files": [],
+            "touched_paths": [],
+            "touched_symbols": [],
+            "evidence_capture": before_capture,
         }, f"Command failed before launch: {exc}"
     except subprocess.TimeoutExpired as exc:
         stdout = exc.stdout or ""
@@ -108,12 +212,19 @@ def execute_command(repo: Path, command: str, timeout: int) -> Tuple[Dict[str, A
                 f"TIMEOUT: Command exceeded the {timeout}-second monitoring window.",
             ]
         )
-        return {
+        execution = {
             "returncode": None,
             "timed_out": True,
             "stdout": stdout,
             "stderr": stderr,
-        }, combined
+        }
+        after_status, after_capture = git_status_snapshot(repo)
+        execution.update(diff_status_snapshots(before_status, after_status))
+        execution["evidence_capture"] = {
+            **after_capture,
+            "before_status_entries": before_capture.get("status_entries"),
+        }
+        return execution, combined
 
 
 def decide_outcome(
@@ -257,6 +368,12 @@ def main() -> int:
         "observed_metrics": progress.get("observed_metrics", {}),
         "checkpoint_candidates": progress.get("checkpoint_candidates", []),
         "monitoring_scope": outcome["monitoring_scope"],
+        "changed_files": execution.get("changed_files", []),
+        "new_files": execution.get("new_files", []),
+        "deleted_files": execution.get("deleted_files", []),
+        "touched_paths": execution.get("touched_paths", []),
+        "touched_symbols": execution.get("touched_symbols", []),
+        "evidence_capture": execution.get("evidence_capture", {}),
     }
     print(json.dumps(payload, indent=2, ensure_ascii=False))
     return 0
